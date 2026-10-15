@@ -14,7 +14,7 @@ Requires Node 24+ and Docker.
    - Credentials → OAuth client ID (Web application), redirect URI `http://localhost:3000/api/auth/callback/google`.
    - Put the client ID/secret in `.env`.
 4. `docker compose up -d` and `npm run db:migrate`
-5. `npm run dev` (web) and `npm run worker` (jobs) in two terminals.
+5. `npm run dev:all` — starts the web app **and** the background worker. (Or `npm run dev` and `npm run worker` in two terminals.) Without the worker, scans stay "queued" forever.
 
 ## Use it on your phone
 

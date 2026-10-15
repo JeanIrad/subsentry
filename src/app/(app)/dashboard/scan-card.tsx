@@ -22,6 +22,8 @@ export function ScanCard(props: {
   merchants: string[];
   /** Set while reading waits for the AI's daily free limit to reset. */
   pausedUntil: string | null;
+  /** Queued for a while with no progress: the background worker is likely down. */
+  stalled: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -119,7 +121,13 @@ export function ScanCard(props: {
         ) : busy ? (
           <>
             <h2 className="mt-3 text-2xl font-bold">Scanning your inbox…</h2>
-            <p className="mt-1 text-brand-100">Looking for receipts, renewals and free trials. This takes about a minute.</p>
+            <p className="mt-1 text-brand-100">
+              {props.stalled
+                ? process.env.NODE_ENV === "development"
+                  ? "Still waiting to start. Is the worker running? Start it with npm run worker (or npm run dev:all)."
+                  : "This is taking longer than usual. We'll keep trying in the background."
+                : "Looking for receipts, renewals and free trials. This takes about a minute."}
+            </p>
             <div className="mt-5 h-1.5 w-full max-w-sm overflow-hidden rounded-full bg-white/20">
               <div className="h-full w-1/3 animate-scan rounded-full bg-white" />
             </div>

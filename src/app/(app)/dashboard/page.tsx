@@ -1,4 +1,4 @@
-import { and, count, eq, gte, ne, sql } from "drizzle-orm";
+import { and, count, eq, getTableColumns, gte, ne, sql } from "drizzle-orm";
 import { BellRing, Check, ChevronRight, CircleHelp, Inbox, ListChecks, Mail, Plus, Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -27,7 +27,15 @@ async function Dashboard() {
   const user = await requireUser();
   const timezone = user.timezone ?? "UTC";
   const [[sync], statusCounts, merchantRows] = await Promise.all([
-    db.select().from(gmailSyncState).where(eq(gmailSyncState.userId, user.id)).limit(1),
+    db
+      .select({
+        ...getTableColumns(gmailSyncState),
+        // A scan queued for minutes means no worker is picking up jobs.
+        stalled: sql<boolean>`${gmailSyncState.backfillStatus} = 'pending' AND ${gmailSyncState.updatedAt} < now() - interval '2 minutes'`,
+      })
+      .from(gmailSyncState)
+      .where(eq(gmailSyncState.userId, user.id))
+      .limit(1),
     db
       .select({ status: processedMessages.status, n: count() })
       .from(processedMessages)
@@ -77,6 +85,7 @@ async function Dashboard() {
 
   const scanCard = (
     <ScanCard
+      stalled={sync?.stalled ?? false}
       status={sync?.backfillStatus ?? null}
       candidateCount={sync?.candidateCount ?? null}
       lastScanned={lastScanned}

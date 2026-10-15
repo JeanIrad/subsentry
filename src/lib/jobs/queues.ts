@@ -2,7 +2,9 @@ import type { PgBoss } from "pg-boss";
 
 // One entry per job in ARCHITECTURE §6. Handlers live in src/worker/jobs.
 export const QUEUES = {
-  gmailBackfill: { name: "gmail.backfill", policy: "singleton" }, // singletonKey = userId
+  // stately + singletonKey userId: at most one queued and one running scan per user,
+  // so repeated taps on "Scan" don't pile up duplicate scans.
+  gmailBackfill: { name: "gmail.backfill", policy: "stately" },
   gmailSync: { name: "gmail.sync", policy: "singleton" },
   // stately + singletonKey `${userId}:${messageId}`: at most one queued job per message,
   // so re-enqueueing during a re-run is a no-op.
