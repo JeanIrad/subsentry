@@ -1,0 +1,114 @@
+[
+  {
+    "id": "noise-amazon-order",
+    "from": "Amazon.com <auto-confirm@amazon.com>",
+    "subject": "Your Amazon.com order #112-4432190-2219 has shipped",
+    "date": "2026-03-14T12:00:00Z",
+    "body": "Your package is on the way.\n\nAnker USB-C Charger 65W  Qty: 1  $35.99\nOrder Total: $38.87\nArriving Thursday, March 17.\n\nTrack package.",
+    "expected": { "kind": "not_subscription" }
+  },
+  {
+    "id": "noise-uber-ride",
+    "from": "Uber Receipts <noreply@uber.com>",
+    "subject": "Your Friday evening trip with Uber",
+    "date": "2026-05-08T23:40:00Z",
+    "body": "Thanks for riding, Alex.\nTotal $23.41\nTrip fare $18.20\nBooking fee $3.21\nTips $2.00\nPayments: Visa ••••4242\n\nYou rode with Marcus. 4.2 miles | 18 min",
+    "expected": { "kind": "not_subscription" }
+  },
+  {
+    "id": "noise-trial-offer-marketing",
+    "from": "Disney+ <disneyplus@mail.disneyplus.com>",
+    "subject": "Start your free trial today 🎬",
+    "date": "2026-02-10T17:00:00Z",
+    "body": "Don't miss the biggest stories of the year! Start your 7-day free trial of Disney+ today and stream thousands of movies and series. Plans from $9.99/month. Sign up now.\n\nYou are receiving this email because you subscribed to Disney+ news. Unsubscribe.",
+    "expected": { "kind": "not_subscription" }
+  },
+  {
+    "id": "noise-netflix-new-releases",
+    "from": "Netflix <info@mailer.netflix.com>",
+    "subject": "New on Netflix this week",
+    "date": "2026-06-19T15:00:00Z",
+    "body": "Hi Alex, here's what's new: Stranger Things: The Animated Series, a new season of Bridgerton, and more. Watch now on Netflix.\n\nThis message was mailed to you as part of your Netflix membership. Manage notification preferences.",
+    "expected": { "kind": "not_subscription" }
+  },
+  {
+    "id": "noise-security-alert",
+    "from": "Google <no-reply@accounts.google.com>",
+    "subject": "Security alert",
+    "date": "2026-07-03T09:10:00Z",
+    "body": "A new sign-in on Windows. We noticed a new sign-in to your Google Account on a Windows device. If this was you, you don't need to do anything. If not, we'll help you secure your account.",
+    "expected": { "kind": "not_subscription" }
+  },
+  {
+    "id": "noise-bank-statement",
+    "from": "Chase <no.reply.alerts@chase.com>",
+    "subject": "Your credit card statement is ready",
+    "date": "2026-04-25T10:00:00Z",
+    "body": "Your statement for the card ending in 4242 is now available.\nStatement balance: $1,284.55\nMinimum payment due: $40.00\nPayment due date: 05/22/2026\n\nSign in to view your statement.",
+    "expected": { "kind": "not_subscription" }
+  },
+  {
+    "id": "noise-flight",
+    "from": "Delta Air Lines <DeltaAirLines@t.delta.com>",
+    "subject": "Your trip confirmation - PIT to ATL",
+    "date": "2026-08-11T13:00:00Z",
+    "body": "Confirmation #GHT7K2\nThu, 03 Sep 2026  PIT 7:05am → ATL 9:12am  DL 1442\nFare total: $248.20\nReceipt number 0062330891122\n\nWe look forward to seeing you on board.",
+    "expected": { "kind": "not_subscription" }
+  },
+  {
+    "id": "noise-newsletter",
+    "from": "Morning Brew <crew@morningbrew.com>",
+    "subject": "☕ Markets rally on rate-cut hopes",
+    "date": "2026-09-22T11:00:00Z",
+    "body": "Good morning. Stocks climbed yesterday as investors bet on lower rates... Refer 3 friends to get a Brew mug. This newsletter is free; unsubscribe anytime.",
+    "expected": { "kind": "not_subscription" }
+  },
+  {
+    "id": "noise-app-purchase",
+    "from": "Apple <no_reply@email.apple.com>",
+    "subject": "Your receipt from Apple.",
+    "date": "2026-05-30T20:00:00Z",
+    "body": "Receipt\nDATE May 30, 2026\nORDER ID MV2KQ1L0T4\n\nApp Store\nProcreate\nPainting app\n$12.99\n\nTOTAL $12.99\nBilled To Visa •••• 1881",
+    "expected": { "kind": "not_subscription" }
+  },
+  {
+    "id": "noise-payment-failed-utility",
+    "from": "Duquesne Light <billing@duquesnelight.com>",
+    "subject": "Your bill is ready",
+    "date": "2026-06-02T08:00:00Z",
+    "body": "Your electric bill for May is $84.12. Amount due by June 20, 2026. Pay online or set up AutoPay.",
+    "expected": { "kind": "not_subscription" }
+  },
+  {
+    "id": "noise-password-reset",
+    "from": "Spotify <no-reply@spotify.com>",
+    "subject": "Reset your password",
+    "date": "2026-01-14T19:00:00Z",
+    "body": "Hello, we received a request to reset the password for your Spotify account. Tap the button below to choose a new one. If you didn't ask for this, ignore this email.",
+    "expected": { "kind": "not_subscription" }
+  },
+  {
+    "id": "noise-doordash-order",
+    "from": "DoorDash <no-reply@doordash.com>",
+    "subject": "Order Confirmation for Alex from Chipotle",
+    "date": "2026-03-21T01:00:00Z",
+    "body": "Your order is confirmed. Burrito Bowl x1 $11.25, Chips & Guac x1 $4.95. Subtotal $16.20, Fees $4.49, Total $22.74. Get $0 delivery fees with DashPass — try it free for 30 days!",
+    "expected": { "kind": "not_subscription" }
+  },
+  {
+    "id": "noise-steam-game",
+    "from": "Steam <noreply@steampowered.com>",
+    "subject": "Thank you for your Steam purchase!",
+    "date": "2026-11-27T22:00:00Z",
+    "body": "Thank you for your recent transaction on Steam.\nBaldur's Gate 3  $41.99\nTotal: $41.99\nPayment method: PayPal",
+    "expected": { "kind": "not_subscription" }
+  },
+  {
+    "id": "noise-paypal-money",
+    "from": "PayPal <service@paypal.com>",
+    "subject": "You've got money",
+    "date": "2026-07-29T16:00:00Z",
+    "body": "Sam Lee sent you $40.00 USD. Note: \"concert tickets\". The money is in your PayPal balance.",
+    "expected": { "kind": "not_subscription" }
+  }
+]

@@ -1,0 +1,1 @@
+ALTER TABLE "extractions" ADD COLUMN "sent_at" timestamp with time zone NOT NULL;

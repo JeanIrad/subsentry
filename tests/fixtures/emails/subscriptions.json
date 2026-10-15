@@ -1,0 +1,504 @@
+[
+  {
+    "id": "receipt-spotify",
+    "from": "Spotify <no-reply@spotify.com>",
+    "subject": "Your Spotify Premium receipt",
+    "date": "2026-03-04T08:12:00Z",
+    "body": "Hi Alex,\n\nThanks for your payment. Here's your receipt.\n\nPremium Individual\nPeriod: Mar 4, 2026 - Apr 3, 2026\nTotal: $11.99 USD\nPayment method: Visa •••• 4242\nDate: March 4, 2026\n\nYour next payment of $11.99 will be on April 4, 2026.\n\nManage your plan: https://www.spotify.com/account/subscription/\n\nSpotify AB, Regeringsgatan 19, Stockholm",
+    "expected": {
+      "kind": "receipt",
+      "merchant": "Spotify",
+      "amount": 11.99,
+      "currency": "USD",
+      "next_charge_date": "2026-04-04"
+    }
+  },
+  {
+    "id": "receipt-netflix",
+    "from": "Netflix <info@account.netflix.com>",
+    "subject": "Your Netflix membership payment",
+    "date": "2026-05-12T14:00:00Z",
+    "body": "We've received your payment.\n\nPlan: Standard\nAmount charged: $17.99\nBilling date: May 12, 2026\nNext billing date: June 12, 2026\n\nQuestions? Visit the Help Center.\nNetflix, Inc.",
+    "expected": {
+      "kind": "receipt",
+      "merchant": "Netflix",
+      "amount": 17.99,
+      "currency": "USD",
+      "next_charge_date": "2026-06-12"
+    }
+  },
+  {
+    "id": "receipt-apple-disney",
+    "from": "Apple <no_reply@email.apple.com>",
+    "subject": "Your receipt from Apple.",
+    "date": "2026-02-20T19:30:00Z",
+    "body": "Receipt\nAPPLE ACCOUNT alex@example.com\nDATE Feb 20, 2026\nORDER ID MQ8X2ZK9P1\n\nApp Store\nDisney+\nDisney+ Premium (Monthly)\nRenews Mar 20, 2026\n$15.99\n\nSubtotal $15.99\nTax $1.42\nTOTAL $17.41\n\nBilled To Visa •••• 1881",
+    "expected": {
+      "kind": "receipt",
+      "merchant": "Disney+",
+      "amount": 17.41,
+      "currency": "USD",
+      "next_charge_date": "2026-03-20"
+    }
+  },
+  {
+    "id": "receipt-google-one",
+    "from": "Google Payments <payments-noreply@google.com>",
+    "subject": "Your Google One receipt",
+    "date": "2026-06-01T07:45:00Z",
+    "body": "Thanks for subscribing to Google One.\n\nGoogle One 2 TB (Annual)\nOrder date: Jun 1, 2026\nTotal: $99.99/year\nRenews on Jun 1, 2027 unless cancelled.\n\nManage your subscription in Google Play: https://play.google.com/store/account/subscriptions",
+    "expected": {
+      "kind": "receipt",
+      "merchant": "Google One",
+      "amount": 99.99,
+      "currency": "USD",
+      "next_charge_date": "2027-06-01"
+    }
+  },
+  {
+    "id": "receipt-adobe-eur",
+    "from": "Adobe <mail@mail.adobe.com>",
+    "subject": "Your Adobe invoice is available",
+    "date": "2026-01-18T09:00:00Z",
+    "body": "Invoice number IE5503321\nInvoice date 18.01.2026\n\nCreative Cloud Photography plan (20GB)\nAnnual plan, paid monthly\nNet amount 9,91 €\nVAT (23%) 2,28 €\nTotal 12,19 €\n\nYour plan renews automatically every month.",
+    "expected": {
+      "kind": "receipt",
+      "merchant": "Adobe",
+      "amount": 12.19,
+      "currency": "EUR"
+    }
+  },
+  {
+    "id": "receipt-nyt",
+    "from": "The New York Times <nytimes@e.newyorktimes.com>",
+    "subject": "Thank you for your payment",
+    "date": "2026-04-07T11:20:00Z",
+    "body": "Your payment for All Access has been processed.\n\nAmount: $25.00\nBilling period: every 4 weeks\nDate: April 7, 2026\nYour next bill will be on May 5, 2026.\n\nTo manage your account, visit myaccount.nytimes.com.",
+    "expected": {
+      "kind": "receipt",
+      "merchant": "The New York Times",
+      "amount": 25.0,
+      "currency": "USD",
+      "next_charge_date": "2026-05-05"
+    }
+  },
+  {
+    "id": "receipt-chatgpt",
+    "from": "OpenAI <noreply@tm.openai.com>",
+    "subject": "Your ChatGPT Plus subscription receipt",
+    "date": "2026-07-22T03:10:00Z",
+    "body": "Receipt #2209-4471\nDate paid: July 22, 2026\n\nChatGPT Plus Subscription  Jul 22 – Aug 22, 2026  Qty 1  $20.00\nSubtotal $20.00\nTotal $20.00\nAmount paid $20.00\n\nPaid with Mastercard - 0098",
+    "expected": {
+      "kind": "receipt",
+      "merchant": [
+        "ChatGPT",
+        "OpenAI"
+      ],
+      "amount": 20.0,
+      "currency": "USD"
+    }
+  },
+  {
+    "id": "receipt-paddle-1password",
+    "from": "Paddle.com <help@paddle.com>",
+    "subject": "Your receipt for 1Password Families",
+    "date": "2026-08-30T16:00:00Z",
+    "body": "Paddle acts as reseller for 1Password.\n\nProduct: 1Password Families (yearly)\nPrice: £47.88\nVAT included\nDate: 30 August 2026\nNext payment: 30 August 2027\n\nManage or cancel: https://my.1password.com/billing",
+    "expected": {
+      "kind": "receipt",
+      "merchant": "1Password",
+      "amount": 47.88,
+      "currency": "GBP",
+      "next_charge_date": "2027-08-30"
+    }
+  },
+  {
+    "id": "receipt-gym",
+    "from": "Planet Fitness <noreply@planetfitness.com>",
+    "subject": "Membership dues receipt",
+    "date": "2026-09-17T12:00:00Z",
+    "body": "Hi Jordan, this is your receipt for monthly membership dues.\n\nClassic Membership — $15.00\nDraft date: 09/17/2026\nHome club: Pittsburgh East\n\nSee you at the gym!",
+    "expected": {
+      "kind": "receipt",
+      "merchant": "Planet Fitness",
+      "amount": 15.0,
+      "currency": "USD"
+    }
+  },
+  {
+    "id": "receipt-jpy",
+    "from": "Nintendo <no-reply@accounts.nintendo.com>",
+    "subject": "Nintendo Switch Online - Receipt",
+    "date": "2026-05-03T02:00:00Z",
+    "body": "Thank you for your purchase.\n\nNintendo Switch Online 12 Month (365 Days) Individual Membership\nTotal ¥2,400\nTransaction date 2026/05/03\nAutomatic renewal: ON (next renewal 2027/05/03)",
+    "expected": {
+      "kind": "receipt",
+      "merchant": "Nintendo Switch Online",
+      "amount": 2400,
+      "currency": "JPY",
+      "next_charge_date": "2027-05-03"
+    }
+  },
+  {
+    "id": "renewal-amazon-prime",
+    "from": "Amazon.com <prime@amazon.com>",
+    "subject": "Your Prime membership renews soon",
+    "date": "2026-10-01T15:00:00Z",
+    "body": "Hello,\n\nThis is a reminder that your Amazon Prime membership will renew on October 15, 2026 at $139.00 per year.\n\nNo action is needed to continue enjoying your benefits. If you'd like to end your membership, visit Your Prime Membership.\n\nThanks for being a Prime member.",
+    "expected": {
+      "kind": "renewal_notice",
+      "merchant": "Amazon Prime",
+      "amount": 139.0,
+      "currency": "USD",
+      "next_charge_date": "2026-10-15"
+    }
+  },
+  {
+    "id": "renewal-nordvpn",
+    "from": "NordVPN <support@nordvpn.com>",
+    "subject": "Your subscription will renew in 7 days",
+    "date": "2026-06-08T10:00:00Z",
+    "body": "Hi there,\n\nYour NordVPN 2-year Plus plan will automatically renew in 7 days. You will be charged $139.08 for the next 1-year period.\n\nIf you don't want to renew, turn off auto-renewal in Nord Account: https://my.nordaccount.com/billing/",
+    "expected": {
+      "kind": "renewal_notice",
+      "merchant": "NordVPN",
+      "amount": 139.08,
+      "currency": "USD",
+      "next_charge_date": "2026-06-15"
+    }
+  },
+  {
+    "id": "renewal-domain",
+    "from": "Namecheap <support@namecheap.com>",
+    "subject": "Auto-Renewal Notice: alexsite.com",
+    "date": "2026-03-10T09:00:00Z",
+    "body": "Your domain alexsite.com is set to auto-renew on March 31, 2026.\n\nDomain Registration (1 year) - $15.16\nICANN fee - $0.20\nTotal: $15.36\n\nMake sure your payment method is up to date.",
+    "expected": {
+      "kind": "renewal_notice",
+      "merchant": "Namecheap",
+      "amount": 15.36,
+      "currency": "USD",
+      "next_charge_date": "2026-03-31"
+    }
+  },
+  {
+    "id": "renewal-microsoft",
+    "from": "Microsoft account team <account-security-noreply@accountprotection.microsoft.com>",
+    "subject": "Your Microsoft 365 Family subscription will renew soon",
+    "date": "2026-11-20T18:00:00Z",
+    "body": "Your Microsoft 365 Family subscription will automatically renew on December 4, 2026 for CA$139.00/year (plus applicable taxes).\n\nTo cancel or change how you pay, go to account.microsoft.com/services.",
+    "expected": {
+      "kind": "renewal_notice",
+      "merchant": "Microsoft 365",
+      "amount": 139.0,
+      "currency": "CAD",
+      "next_charge_date": "2026-12-04"
+    }
+  },
+  {
+    "id": "renewal-relative-date",
+    "from": "Headspace <hello@headspace.com>",
+    "subject": "Heads up: your plan renews tomorrow",
+    "date": "2026-02-27T13:00:00Z",
+    "body": "Just a heads up that your annual Headspace subscription renews tomorrow for $69.99. Keep breathing easy!\n\nManage subscription: https://www.headspace.com/subscriptions",
+    "expected": {
+      "kind": "renewal_notice",
+      "merchant": "Headspace",
+      "amount": 69.99,
+      "currency": "USD",
+      "next_charge_date": "2026-02-28"
+    }
+  },
+  {
+    "id": "renewal-icloud",
+    "from": "Apple <no_reply@email.apple.com>",
+    "subject": "Your subscription is renewing",
+    "date": "2026-08-25T20:00:00Z",
+    "body": "Your iCloud+ with 200 GB of storage subscription will renew on 1 September 2026 for £2.99/month.\n\nTo manage or cancel, go to Settings > [your name] > Subscriptions.",
+    "expected": {
+      "kind": "renewal_notice",
+      "merchant": "iCloud+",
+      "amount": 2.99,
+      "currency": "GBP",
+      "next_charge_date": "2026-09-01"
+    }
+  },
+  {
+    "id": "trial-start-hulu",
+    "from": "Hulu <hulu@hulumail.com>",
+    "subject": "Welcome to Hulu! Your free trial has started",
+    "date": "2026-04-02T21:00:00Z",
+    "body": "Welcome to Hulu!\n\nYour 30-day free trial of Hulu (With Ads) starts today. Your trial ends on May 2, 2026, and you'll be charged $9.99/month after that unless you cancel before then.\n\nCancel anytime at https://secure.hulu.com/account/cancel",
+    "expected": {
+      "kind": "trial_started",
+      "merchant": "Hulu",
+      "amount": 9.99,
+      "currency": "USD",
+      "trial_end_date": "2026-05-02"
+    }
+  },
+  {
+    "id": "trial-start-youtube",
+    "from": "YouTube <no-reply@youtube.com>",
+    "subject": "Your YouTube Premium trial is active",
+    "date": "2026-07-10T17:30:00Z",
+    "body": "Your 1 month trial of YouTube Premium has started.\n\nOn Aug 10, 2026 you'll be charged $13.99 monthly. Cancel at least a day before to avoid charges.\n\nGoogle LLC, 1600 Amphitheatre Pkwy",
+    "expected": {
+      "kind": "trial_started",
+      "merchant": "YouTube Premium",
+      "amount": 13.99,
+      "currency": "USD",
+      "trial_end_date": "2026-08-10"
+    }
+  },
+  {
+    "id": "trial-start-duolingo",
+    "from": "Duolingo <hello@duolingo.com>",
+    "subject": "Your 14-day free trial of Super Duolingo",
+    "date": "2026-01-05T08:00:00Z",
+    "body": "You're in! Your 14-day free trial of Super Duolingo has begun. After your trial ends on January 19, 2026, your annual subscription of $84.99 will start automatically.",
+    "expected": {
+      "kind": "trial_started",
+      "merchant": "Duolingo",
+      "amount": 84.99,
+      "currency": "USD",
+      "trial_end_date": "2026-01-19"
+    }
+  },
+  {
+    "id": "trial-start-relative",
+    "from": "Audible <account@audible.com>",
+    "subject": "Welcome to Audible Premium Plus",
+    "date": "2026-09-09T12:00:00Z",
+    "body": "Your free trial starts now. Enjoy 1 credit and the Plus Catalog. Your 30-day trial ends in 30 days, after which your membership will automatically continue at $14.95/month.",
+    "expected": {
+      "kind": "trial_started",
+      "merchant": "Audible",
+      "amount": 14.95,
+      "currency": "USD",
+      "trial_end_date": "2026-10-09"
+    }
+  },
+  {
+    "id": "trial-start-paramount",
+    "from": "Paramount+ <paramountplus@mail.paramountplus.com>",
+    "subject": "Your Paramount+ trial confirmation",
+    "date": "2026-06-20T02:15:00Z",
+    "body": "Thanks for signing up! Your 7-day free trial of Paramount+ Essential is active.\nTrial end date: 06/27/2026\nThen $7.99/month + tax.\n\nTo cancel, go to Account > Cancel Subscription.",
+    "expected": {
+      "kind": "trial_started",
+      "merchant": "Paramount+",
+      "amount": 7.99,
+      "currency": "USD",
+      "trial_end_date": "2026-06-27"
+    }
+  },
+  {
+    "id": "trial-start-canva",
+    "from": "Canva <start@engage.canva.com>",
+    "subject": "Your Canva Pro free trial",
+    "date": "2026-02-11T16:00:00Z",
+    "body": "Welcome to Canva Pro! You have 30 days free. Your trial ends on March 13, 2026. After that, you'll be billed $119.99 per year. You can cancel anytime from your Billing & Plans settings.",
+    "expected": {
+      "kind": "trial_started",
+      "merchant": "Canva",
+      "amount": 119.99,
+      "currency": "USD",
+      "trial_end_date": "2026-03-13"
+    }
+  },
+  {
+    "id": "trial-ending-peacock",
+    "from": "Peacock <peacock@email.peacocktv.com>",
+    "subject": "Your free trial ends in 3 days",
+    "date": "2026-05-14T15:00:00Z",
+    "body": "Your Peacock Premium free trial ends on May 17, 2026. After that, your plan will continue at $7.99/month. Don't want to continue? Cancel before your trial ends.",
+    "expected": {
+      "kind": "trial_ending",
+      "merchant": "Peacock",
+      "amount": 7.99,
+      "currency": "USD",
+      "trial_end_date": "2026-05-17"
+    }
+  },
+  {
+    "id": "trial-ending-grammarly",
+    "from": "Grammarly <info@send.grammarly.com>",
+    "subject": "Reminder: your Grammarly Pro trial is ending",
+    "date": "2026-08-03T10:00:00Z",
+    "body": "Your 7-day Grammarly Pro trial ends tomorrow. Starting August 4, 2026 you'll be charged $144.00 for an annual subscription.\nManage: https://account.grammarly.com/subscription",
+    "expected": {
+      "kind": "trial_ending",
+      "merchant": "Grammarly",
+      "amount": 144.0,
+      "currency": "USD",
+      "trial_end_date": "2026-08-04"
+    }
+  },
+  {
+    "id": "trial-ending-masterclass",
+    "from": "MasterClass <hello@masterclass.com>",
+    "subject": "Your trial is almost over",
+    "date": "2026-10-20T19:00:00Z",
+    "body": "Just a reminder: your MasterClass trial converts to an annual Individual membership ($120/year) on October 23, 2026.",
+    "expected": {
+      "kind": "trial_ending",
+      "merchant": "MasterClass",
+      "amount": 120.0,
+      "currency": "USD",
+      "trial_end_date": "2026-10-23"
+    }
+  },
+  {
+    "id": "trial-ending-google-play",
+    "from": "Google Play <googleplay-noreply@google.com>",
+    "subject": "Your free trial of Calm ends soon",
+    "date": "2026-03-25T09:00:00Z",
+    "body": "Your free trial for Calm Premium ends on Mar 28, 2026. Unless you cancel, you'll be charged €49.99 every year starting Mar 28, 2026.\n\nManage subscriptions: https://play.google.com/store/account/subscriptions",
+    "expected": {
+      "kind": "trial_ending",
+      "merchant": "Calm",
+      "amount": 49.99,
+      "currency": "EUR",
+      "trial_end_date": "2026-03-28"
+    }
+  },
+  {
+    "id": "trial-ending-strava",
+    "from": "Strava <no-reply@strava.com>",
+    "subject": "Your Strava subscription trial ends in 2 days",
+    "date": "2026-04-28T07:00:00Z",
+    "body": "Your 30-day free trial wraps up in 2 days. Your subscription will begin on April 30, 2026 at $79.99/year. Keep tracking your goals!",
+    "expected": {
+      "kind": "trial_ending",
+      "merchant": "Strava",
+      "amount": 79.99,
+      "currency": "USD",
+      "trial_end_date": "2026-04-30"
+    }
+  },
+  {
+    "id": "trial-ending-linkedin",
+    "from": "LinkedIn <messages-noreply@linkedin.com>",
+    "subject": "Your Premium free trial is ending soon",
+    "date": "2026-09-01T12:00:00Z",
+    "body": "Your free month of Premium Career ends on September 6, 2026. You'll then be billed $39.99/month. Cancel any time before that date to avoid being charged.",
+    "expected": {
+      "kind": "trial_ending",
+      "merchant": "LinkedIn Premium",
+      "amount": 39.99,
+      "currency": "USD",
+      "trial_end_date": "2026-09-06"
+    }
+  },
+  {
+    "id": "cancel-hbo",
+    "from": "Max <max@mail.max.com>",
+    "subject": "Your subscription has been canceled",
+    "date": "2026-06-05T22:00:00Z",
+    "body": "We're sorry to see you go. Your Max Basic With Ads subscription has been canceled. You can continue watching until July 1, 2026. You won't be charged again.",
+    "expected": {
+      "kind": "cancellation_confirmation",
+      "merchant": "Max"
+    }
+  },
+  {
+    "id": "cancel-dropbox",
+    "from": "Dropbox <no-reply@dropbox.com>",
+    "subject": "Your Dropbox Plus plan has been cancelled",
+    "date": "2026-02-02T13:00:00Z",
+    "body": "Hi Alex, we've cancelled your Dropbox Plus subscription as requested. Your account will move to Dropbox Basic on February 28, 2026.",
+    "expected": {
+      "kind": "cancellation_confirmation",
+      "merchant": "Dropbox"
+    }
+  },
+  {
+    "id": "cancel-trial-apple",
+    "from": "Apple <no_reply@email.apple.com>",
+    "subject": "Subscription Cancellation Confirmation",
+    "date": "2026-07-15T08:00:00Z",
+    "body": "You have successfully cancelled your free trial for Apple TV+. You can continue to use Apple TV+ until Jul 21, 2026. You will not be charged.",
+    "expected": {
+      "kind": "cancellation_confirmation",
+      "merchant": "Apple TV+"
+    }
+  },
+  {
+    "id": "cancel-hellofresh",
+    "from": "HelloFresh <hello@hellofresh.com>",
+    "subject": "Your HelloFresh plan has been canceled",
+    "date": "2026-03-30T17:00:00Z",
+    "body": "Your subscription is canceled. No future deliveries are scheduled and you won't be charged again. We'd love to have you back anytime!",
+    "expected": {
+      "kind": "cancellation_confirmation",
+      "merchant": "HelloFresh"
+    }
+  },
+  {
+    "id": "cancel-patreon",
+    "from": "Patreon <no-reply@patreon.com>",
+    "subject": "Your membership to Kurzgesagt has ended",
+    "date": "2026-05-01T06:00:00Z",
+    "body": "You've cancelled your $5/month membership to Kurzgesagt. You'll keep your benefits until the end of your current billing period.",
+    "expected": {
+      "kind": "cancellation_confirmation",
+      "merchant": [
+        "Patreon",
+        "Kurzgesagt"
+      ]
+    }
+  },
+  {
+    "id": "price-spotify",
+    "from": "Spotify <no-reply@spotify.com>",
+    "subject": "An update to your Premium price",
+    "date": "2026-06-10T10:00:00Z",
+    "body": "We're updating the price of Premium Individual from $11.99 to $12.99/month. Your new price will apply starting with your billing date in August 2026. You can cancel anytime in your account page.",
+    "expected": {
+      "kind": "price_change",
+      "merchant": "Spotify",
+      "amount": 12.99,
+      "currency": "USD"
+    }
+  },
+  {
+    "id": "price-youtube-tv",
+    "from": "YouTube TV <no-reply@youtube.com>",
+    "subject": "Your YouTube TV price is changing",
+    "date": "2026-12-01T18:00:00Z",
+    "body": "Starting January 13, 2027, the price of the YouTube TV Base Plan will be $86.99/month (up from $82.99). Your next bill on or after this date will reflect the new price.",
+    "expected": {
+      "kind": "price_change",
+      "merchant": "YouTube TV",
+      "amount": 86.99,
+      "currency": "USD"
+    }
+  },
+  {
+    "id": "price-netflix-gbp",
+    "from": "Netflix <info@account.netflix.com>",
+    "subject": "Changes to your Netflix membership",
+    "date": "2026-04-15T11:00:00Z",
+    "body": "We're writing to let you know that your Standard plan price will change to £12.99 per month. This takes effect from your next billing date after 15 May 2026.",
+    "expected": {
+      "kind": "price_change",
+      "merchant": "Netflix",
+      "amount": 12.99,
+      "currency": "GBP"
+    }
+  },
+  {
+    "id": "price-github",
+    "from": "GitHub <noreply@github.com>",
+    "subject": "Upcoming changes to your GitHub Copilot plan pricing",
+    "date": "2026-08-20T15:00:00Z",
+    "body": "Starting October 1, 2026, GitHub Copilot Pro will cost $12/month (previously $10/month). No action is needed; your plan will update automatically at your next renewal.",
+    "expected": {
+      "kind": "price_change",
+      "merchant": "GitHub Copilot",
+      "amount": 12.0,
+      "currency": "USD"
+    }
+  }
+]

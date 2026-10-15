@@ -1,0 +1,1 @@
+ALTER TABLE "subscriptions" ADD COLUMN "review_reason" text;

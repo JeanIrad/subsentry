@@ -1,0 +1,1 @@
+ALTER TABLE "gmail_sync_state" ADD COLUMN "extract_paused_until" timestamp with time zone;
