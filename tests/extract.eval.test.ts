@@ -25,8 +25,8 @@ interface Fixture {
   };
 }
 
-// SPEC §11: M2 needs 85%; M6 raises the bar to 90%.
-const MIN_ACCURACY = Number(process.env.EVAL_MIN_ACCURACY ?? 0.85);
+// SPEC §11/§7: ≥ 90% from M6 on (M2 required 85%).
+const MIN_ACCURACY = Number(process.env.EVAL_MIN_ACCURACY ?? 0.9);
 const MIN_PRECISION = 0.9;
 
 const dir = join(import.meta.dirname, "fixtures/emails");

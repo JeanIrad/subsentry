@@ -14,6 +14,8 @@ export const QUEUES = {
   remindersPlan: { name: "reminders.plan", policy: "standard" },
   remindersDispatch: { name: "reminders.dispatch", policy: "singleton" },
   priorityRecompute: { name: "priority.recompute", policy: "singleton" },
+  // Every 4 hours: enqueue gmail.sync for each connected user.
+  gmailSyncAll: { name: "gmail.sync.all", policy: "singleton" },
   // Daily: recompute every subscription (dates roll forward) and re-plan.
   subscriptionsRefresh: { name: "subscriptions.refresh", policy: "singleton" },
 } as const;

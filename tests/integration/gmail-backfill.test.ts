@@ -5,7 +5,7 @@ import { db, pool } from "@/db/client";
 import { gmailSyncState, processedMessages, users } from "@/db/schema";
 import type { GmailReader } from "@/lib/google/gmail";
 import type { EmailExtractJob } from "@/lib/jobs/queues";
-import { runGmailBackfill } from "@/worker/jobs/gmail-backfill";
+import { runGmailBackfill, runGmailSync } from "@/worker/jobs/gmail-backfill";
 
 // Runs against the local docker Postgres (npm run test:integration).
 
@@ -85,5 +85,33 @@ describe("runGmailBackfill", () => {
     const result = await runGmailBackfill(userId, { db, gmail: fakeGmail([[]]), enqueueExtract });
     expect(result).toEqual({ listed: 0, newMessages: 0, candidateCount: 0 });
     expect(enqueued).toEqual([]);
+  });
+
+  describe("incremental sync", () => {
+    it("does nothing until the first full scan has finished", async () => {
+      expect(await runGmailSync(userId, { db, gmail: fakeGmail([["m1"]]), enqueueExtract })).toBeNull();
+    });
+
+    it("searches the days since the last sync plus a margin, and only queues new mail", async () => {
+      await runGmailBackfill(userId, { db, gmail: fakeGmail([["m1", "m2"]]), enqueueExtract });
+      await db
+        .update(gmailSyncState)
+        .set({ lastSyncedAt: new Date("2026-10-10T00:00:00Z") })
+        .where(eq(gmailSyncState.userId, userId));
+      enqueued = [];
+
+      const gmail = fakeGmail([["m2", "m3"]]);
+      const result = await runGmailSync(userId, { db, gmail, enqueueExtract }, new Date("2026-10-15T00:00:00Z"));
+      expect(gmail.queries[0]).toMatch(/^newer_than:7d /); // 5 days + 2 margin
+      expect(result).toEqual({ listed: 2, newMessages: 1, candidateCount: 3 });
+      // m2 is still `queued` (never extracted here), so it is re-enqueued too.
+      expect(enqueued.map((j) => j.gmailMessageId)).toEqual(["m2", "m3"]);
+    });
+
+    it("skips disconnected accounts", async () => {
+      await runGmailBackfill(userId, { db, gmail: fakeGmail([["m1"]]), enqueueExtract });
+      await db.update(gmailSyncState).set({ disconnectedAt: new Date() }).where(eq(gmailSyncState.userId, userId));
+      expect(await runGmailSync(userId, { db, gmail: fakeGmail([["m9"]]), enqueueExtract })).toBeNull();
+    });
   });
 });

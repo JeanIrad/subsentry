@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { PgBoss } from "pg-boss";
 import { db, pool } from "@/db/client";
 import { gmailSyncState, subscriptions } from "@/db/schema";
@@ -25,7 +25,7 @@ import { mergeExtraction } from "@/lib/ledger/merge";
 import { createLLM } from "@/lib/llm";
 import { LLMRateLimitError } from "@/lib/llm/types";
 import { runEmailExtract } from "./jobs/email-extract";
-import { runGmailBackfill } from "./jobs/gmail-backfill";
+import { runGmailBackfill, runGmailSync } from "./jobs/gmail-backfill";
 import { createPacer } from "./pacer";
 
 async function registerHandlers(boss: PgBoss): Promise<void> {
@@ -36,31 +36,44 @@ async function registerHandlers(boss: PgBoss): Promise<void> {
     );
   };
 
-  await boss.work<GmailBackfillJob>(QUEUES.gmailBackfill.name, async ([job]) => {
-    const { userId } = job.data;
-    try {
-      const accessToken = await getGoogleAccessToken(userId);
-      const result = await runGmailBackfill(userId, {
-        db,
-        gmail: createGmailReader(accessToken),
-        enqueueExtract,
-      });
-      console.log(`[gmail.backfill] user=${userId}`, result);
-    } catch (err) {
-      const reconnect = err instanceof GoogleReconnectRequiredError;
-      await db
-        .update(gmailSyncState)
-        .set({
-          backfillStatus: "failed",
-          lastError: reconnect ? err.message : "Gmail scan failed; retrying automatically.",
-          ...(reconnect && { disconnectedAt: new Date() }),
-        })
-        .where(eq(gmailSyncState.userId, userId));
-      // Only the message: Google errors can echo request details.
-      console.error(`[gmail.backfill] user=${userId} failed:`, err instanceof Error ? err.message : err);
-      if (!reconnect) throw err; // let pg-boss retry with backoff
+  // Shared by the full scan and the 4-hourly sync.
+  const scanJob = (name: string, run: typeof runGmailBackfill | typeof runGmailSync, failStatus: boolean) =>
+    async ([job]: { data: GmailBackfillJob }[]) => {
+      const { userId } = job.data;
+      try {
+        const accessToken = await getGoogleAccessToken(userId);
+        const result = await run(userId, { db, gmail: createGmailReader(accessToken), enqueueExtract });
+        console.log(`[${name}] user=${userId}`, result ?? "skipped");
+      } catch (err) {
+        const reconnect = err instanceof GoogleReconnectRequiredError;
+        await db
+          .update(gmailSyncState)
+          .set({
+            ...(failStatus && { backfillStatus: "failed" as const }),
+            lastError: reconnect ? err.message : "Gmail scan failed; retrying automatically.",
+            ...(reconnect && { disconnectedAt: new Date() }),
+          })
+          .where(eq(gmailSyncState.userId, userId));
+        // Only the message: Google errors can echo request details.
+        console.error(`[${name}] user=${userId} failed:`, err instanceof Error ? err.message : err);
+        if (!reconnect) throw err; // let pg-boss retry with backoff
+      }
+    };
+  await boss.work<GmailBackfillJob>(QUEUES.gmailBackfill.name, scanJob("gmail.backfill", runGmailBackfill, true));
+  await boss.work<GmailBackfillJob>(QUEUES.gmailSync.name, scanJob("gmail.sync", runGmailSync, false));
+
+  await boss.work(QUEUES.gmailSyncAll.name, async () => {
+    const users = await db
+      .select({ userId: gmailSyncState.userId })
+      .from(gmailSyncState)
+      .where(and(eq(gmailSyncState.backfillStatus, "done"), isNull(gmailSyncState.disconnectedAt)));
+    for (const { userId } of users) {
+      const data: GmailBackfillJob = { userId };
+      await boss.send(QUEUES.gmailSync.name, data, { singletonKey: userId });
     }
+    console.log(`[gmail.sync.all] queued ${users.length} users`);
   });
+  await boss.schedule(QUEUES.gmailSyncAll.name, "0 */4 * * *");
 
   await boss.work<LedgerMergeJob>(QUEUES.ledgerMerge.name, async ([job]) => {
     const result = await mergeExtraction(db, job.data.extractionId);

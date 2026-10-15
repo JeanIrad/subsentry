@@ -24,7 +24,7 @@ export interface BackfillResult {
  * which also repairs a crash between insert and enqueue.
  */
 export async function runGmailBackfill(userId: string, deps: BackfillDeps): Promise<BackfillResult> {
-  const { db, gmail, enqueueExtract } = deps;
+  const { db, gmail } = deps;
 
   await db
     .insert(gmailSyncState)
@@ -34,8 +34,7 @@ export async function runGmailBackfill(userId: string, deps: BackfillDeps): Prom
       set: { backfillStatus: "running", lastError: null },
     });
 
-  // Taken before listing, so incremental sync (M6) can't miss mail that
-  // arrives while the backfill runs. Only set once.
+  // Recorded for future use (Gmail history API); set once, before listing.
   const historyId = await gmail.getHistoryId();
   const [state] = await db
     .select({ historyId: gmailSyncState.historyId })
@@ -45,7 +44,30 @@ export async function runGmailBackfill(userId: string, deps: BackfillDeps): Prom
     await db.update(gmailSyncState).set({ historyId }).where(eq(gmailSyncState.userId, userId));
   }
 
-  const query = buildCandidateQuery({ newerThanDays: BACKFILL_DAYS });
+  const { listed, newMessages } = await collectCandidates(userId, BACKFILL_DAYS, deps);
+  const candidateCount = await finishSync(db, userId, { backfillStatus: "done" });
+  return { listed, newMessages, candidateCount };
+}
+
+/**
+ * Incremental sync (every 4 hours): the same search over the days since the
+ * last sync plus a margin. Already-seen messages are skipped, so the overlap
+ * costs nothing and downtime of any length is covered.
+ */
+export async function runGmailSync(userId: string, deps: BackfillDeps, now = new Date()): Promise<BackfillResult | null> {
+  const [state] = await deps.db.select().from(gmailSyncState).where(eq(gmailSyncState.userId, userId));
+  // Nothing to do until the first full scan has finished.
+  if (!state || state.backfillStatus !== "done" || state.disconnectedAt) return null;
+  const since = state.lastSyncedAt ?? now;
+  const days = Math.min(BACKFILL_DAYS, Math.ceil((now.getTime() - since.getTime()) / 86_400_000) + 2);
+
+  const { listed, newMessages } = await collectCandidates(userId, days, deps);
+  const candidateCount = await finishSync(deps.db, userId, {});
+  return { listed, newMessages, candidateCount };
+}
+
+async function collectCandidates(userId: string, days: number, { db, gmail, enqueueExtract }: BackfillDeps) {
+  const query = buildCandidateQuery({ newerThanDays: days });
   let pageToken: string | undefined;
   let listed = 0;
   let newMessages = 0;
@@ -78,21 +100,17 @@ export async function runGmailBackfill(userId: string, deps: BackfillDeps): Prom
     }
   } while (pageToken);
 
+  return { listed, newMessages };
+}
+
+async function finishSync(db: Db, userId: string, extra: Partial<typeof gmailSyncState.$inferInsert>): Promise<number> {
   const [{ total }] = await db
     .select({ total: count() })
     .from(processedMessages)
     .where(eq(processedMessages.userId, userId));
-
   await db
     .update(gmailSyncState)
-    .set({
-      backfillStatus: "done",
-      candidateCount: total,
-      lastSyncedAt: new Date(),
-      lastError: null,
-      disconnectedAt: null,
-    })
+    .set({ ...extra, candidateCount: total, lastSyncedAt: new Date(), lastError: null, disconnectedAt: null })
     .where(eq(gmailSyncState.userId, userId));
-
-  return { listed, newMessages, candidateCount: total };
+  return total;
 }
