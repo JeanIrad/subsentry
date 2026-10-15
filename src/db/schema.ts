@@ -203,6 +203,9 @@ export const subscriptions = pgTable(
     priorityScore: integer("priority_score"),
     priorityFactors: jsonb("priority_factors").$type<Record<string, number>>(),
     googleEventId: text("google_event_id"),
+    // The charge date the calendar event was created for. If the user deletes
+    // the event we only recreate it when the date moves.
+    googleEventDate: date("google_event_date"),
     quiet: boolean("quiet").notNull().default(false),
     dismissed: boolean("dismissed").notNull().default(false),
     ...timestamps,

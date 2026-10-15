@@ -14,11 +14,21 @@ export const QUEUES = {
   remindersPlan: { name: "reminders.plan", policy: "standard" },
   remindersDispatch: { name: "reminders.dispatch", policy: "singleton" },
   priorityRecompute: { name: "priority.recompute", policy: "singleton" },
+  // Daily: recompute every subscription (dates roll forward) and re-plan.
+  subscriptionsRefresh: { name: "subscriptions.refresh", policy: "singleton" },
 } as const;
 
 export type GmailBackfillJob = { userId: string };
 export type EmailExtractJob = { userId: string; gmailMessageId: string };
 export type LedgerMergeJob = { userId: string; extractionId: string };
+export type SubscriptionJob = { subscriptionId: string };
+
+/** Re-plan reminders and the calendar event after anything about a subscription changed. */
+export async function enqueueSubscriptionSync(boss: PgBoss, subscriptionId: string): Promise<void> {
+  const data: SubscriptionJob = { subscriptionId };
+  await boss.send(QUEUES.remindersPlan.name, data, { singletonKey: subscriptionId });
+  await boss.send(QUEUES.calendarUpsert.name, data, { singletonKey: subscriptionId });
+}
 
 export async function ensureQueues(boss: PgBoss): Promise<void> {
   const existing = new Set((await boss.getQueues()).map((q) => q.name));

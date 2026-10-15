@@ -1,17 +1,25 @@
 import { eq } from "drizzle-orm";
 import { PgBoss } from "pg-boss";
 import { db, pool } from "@/db/client";
-import { gmailSyncState } from "@/db/schema";
+import { gmailSyncState, subscriptions } from "@/db/schema";
 import { env } from "@/env";
 import { getGoogleAccessToken, GoogleReconnectRequiredError } from "@/lib/google/auth";
 import { createGmailReader } from "@/lib/google/gmail";
 import {
+  enqueueSubscriptionSync,
   ensureQueues,
   QUEUES,
   type EmailExtractJob,
   type GmailBackfillJob,
   type LedgerMergeJob,
+  type SubscriptionJob,
 } from "@/lib/jobs/queues";
+import { CALENDAR_EVENTS } from "@/lib/google/auth";
+import { createCalendarClient } from "@/lib/google/calendar";
+import { recomputeSubscription } from "@/lib/ledger/merge";
+import { createResendSender } from "@/lib/reminders/email";
+import { runCalendarUpsert } from "./jobs/calendar-upsert";
+import { runRemindersDispatch, runRemindersPlan, subscriptionsToRefresh } from "./jobs/reminders";
 import { mergeExtraction } from "@/lib/ledger/merge";
 import { createLLM } from "@/lib/llm";
 import { LLMRateLimitError } from "@/lib/llm/types";
@@ -56,8 +64,51 @@ async function registerHandlers(boss: PgBoss): Promise<void> {
   await boss.work<LedgerMergeJob>(QUEUES.ledgerMerge.name, async ([job]) => {
     const result = await mergeExtraction(db, job.data.extractionId);
     console.log(`[ledger.merge] extraction=${job.data.extractionId} →`, result ?? "skipped");
-    // M4: when result.nextChargeChanged, enqueue calendar.upsert + reminders.plan.
+    if (result) await enqueueSubscriptionSync(boss, result.subscriptionId);
   });
+
+  await boss.work<SubscriptionJob>(QUEUES.remindersPlan.name, async ([job]) => {
+    const n = await runRemindersPlan(db, job.data.subscriptionId);
+    console.log(`[reminders.plan] subscription=${job.data.subscriptionId}: ${n} upcoming`);
+  });
+
+  await boss.work<SubscriptionJob>(QUEUES.calendarUpsert.name, async ([job]) => {
+    const { subscriptionId } = job.data;
+    const [sub] = await db.select({ userId: subscriptions.userId }).from(subscriptions).where(eq(subscriptions.id, subscriptionId));
+    if (!sub) return;
+    try {
+      const token = await getGoogleAccessToken(sub.userId, [CALENDAR_EVENTS]);
+      const outcome = await runCalendarUpsert(db, subscriptionId, createCalendarClient(token));
+      console.log(`[calendar.upsert] subscription=${subscriptionId}: ${outcome}`);
+    } catch (err) {
+      if (err instanceof GoogleReconnectRequiredError) {
+        console.warn(`[calendar.upsert] user=${sub.userId}: ${err.message}`);
+        return; // no calendar access: email reminders still work
+      }
+      throw err;
+    }
+  });
+
+  await boss.work(QUEUES.subscriptionsRefresh.name, async () => {
+    const ids = await subscriptionsToRefresh(db);
+    for (const id of ids) {
+      await recomputeSubscription(db, id);
+      await enqueueSubscriptionSync(boss, id);
+    }
+    console.log(`[subscriptions.refresh] ${ids.length} subscriptions`);
+  });
+  await boss.schedule(QUEUES.subscriptionsRefresh.name, "0 6 * * *"); // daily, 06:00 UTC
+
+  if (env.RESEND_API_KEY) {
+    const sender = createResendSender({ apiKey: env.RESEND_API_KEY, from: env.EMAIL_FROM });
+    await boss.work(QUEUES.remindersDispatch.name, async () => {
+      const r = await runRemindersDispatch(db, sender);
+      if (r.sent || r.failed || r.skipped) console.log("[reminders.dispatch]", r);
+    });
+    await boss.schedule(QUEUES.remindersDispatch.name, "*/15 * * * *");
+  } else {
+    console.warn("[worker] RESEND_API_KEY not set: reminder emails will wait.");
+  }
 
   if (!env.GEMINI_API_KEY) {
     console.warn("[worker] GEMINI_API_KEY not set: email.extract jobs will wait in the queue.");

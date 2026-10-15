@@ -1,4 +1,4 @@
-import { ArrowLeft, CircleHelp, EyeOff, Eye, ExternalLink, PencilLine } from "lucide-react";
+import { ArrowLeft, BellOff, BellRing, CircleHelp, EyeOff, Eye, ExternalLink, PencilLine } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -7,8 +7,8 @@ import { price, SubscriptionAvatar, whenText } from "@/components/subscription-r
 import { button, card } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { currencyExponent } from "@/lib/money";
-import { getSubscription, type SubscriptionView } from "@/lib/subscriptions/queries";
-import { confirmStatus, setDismissed, updateSubscription } from "../actions";
+import { getSubscription, upcomingReminders, type SubscriptionView } from "@/lib/subscriptions/queries";
+import { confirmStatus, setDismissed, setQuiet, updateSubscription } from "../actions";
 import { SubscriptionForm } from "../subscription-form";
 
 export const metadata: Metadata = { title: "Subscription" };
@@ -28,9 +28,11 @@ export default function SubscriptionPage({ params }: PageProps<"/subscriptions/[
 
 async function Detail({ params }: { params: Promise<{ id: string }> }) {
   const [{ id }, user] = await Promise.all([params, requireUser()]);
-  const s = await getSubscription(user.id, id, user.timezone ?? "UTC");
+  const timezone = user.timezone ?? "UTC";
+  const s = await getSubscription(user.id, id, timezone);
   if (!s) notFound();
   const p = price(s);
+  const reminderTimes = await upcomingReminders(s.id);
 
   return (
     <div className="flex flex-col gap-5">
@@ -63,6 +65,39 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
           Manage or cancel on {s.name}
           <ExternalLink className="size-4" />
         </a>
+      )}
+
+      {!s.dismissed && (s.status === "active" || s.status === "trial") && (
+        <section className={`${card} p-5`}>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="flex items-center gap-2 font-bold">
+                {s.quiet ? <BellOff className="size-4 text-muted" /> : <BellRing className="size-4 text-brand-600" />}
+                Reminders {s.quiet ? "off" : "on"}
+              </h2>
+              <p className="mt-1 text-sm text-muted">
+                {s.quiet
+                  ? "No emails or calendar events for this one."
+                  : s.needsReview
+                    ? "Starts once you confirm this subscription above."
+                    : reminderTimes.length > 0
+                      ? `Email + calendar alert on ${reminderTimes.map((t) => formatInstant(t, timezone)).join(", ")}.`
+                      : "Email + calendar alerts before each charge."}
+              </p>
+            </div>
+            <form action={setQuiet.bind(null, s.id, !s.quiet)}>
+              <button
+                type="submit"
+                role="switch"
+                aria-checked={!s.quiet}
+                aria-label={s.quiet ? "Turn reminders on" : "Turn reminders off"}
+                className={`relative h-7 w-12 shrink-0 rounded-full transition ${s.quiet ? "bg-line" : "bg-brand-600"}`}
+              >
+                <span className={`absolute top-1 size-5 rounded-full bg-white shadow transition-all ${s.quiet ? "left-1" : "left-6"}`} />
+              </button>
+            </form>
+          </div>
+        </section>
       )}
 
       <details className={`${card} group p-5`}>
@@ -151,4 +186,8 @@ function formatDate(d: string | null): string | null {
   return d
     ? new Date(`${d}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })
     : null;
+}
+
+function formatInstant(t: Date, timezone: string): string {
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: timezone }).format(t);
 }

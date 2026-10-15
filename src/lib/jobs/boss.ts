@@ -1,6 +1,6 @@
 import { PgBoss } from "pg-boss";
 import { env } from "@/env";
-import { ensureQueues, QUEUES, type GmailBackfillJob } from "./queues";
+import { enqueueSubscriptionSync, ensureQueues, QUEUES, type GmailBackfillJob } from "./queues";
 
 // Send-only pg-boss client for the Next.js app. The worker runs its own
 // full instance (maintenance, schedules, handlers).
@@ -32,4 +32,8 @@ export async function enqueueBackfill(userId: string): Promise<void> {
   const boss = await getBoss();
   const data: GmailBackfillJob = { userId };
   await boss.send(QUEUES.gmailBackfill.name, data, { singletonKey: userId });
+}
+
+export async function syncSubscription(subscriptionId: string): Promise<void> {
+  await enqueueSubscriptionSync(await getBoss(), subscriptionId);
 }

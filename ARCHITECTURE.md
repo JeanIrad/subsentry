@@ -119,16 +119,22 @@ Deployment target (later): Vercel or Fly.io for web, a separate long-running wor
 - `send_at` = 09:00 in the user's timezone on `anchor − offset` (computed with `TZDate`, stored as `timestamptz`).
 - In one transaction: set `status = 'canceled'` on any `pending` reminder for this subscription whose `charge_date` ≠ the current `next_charge_date` (date moved, or subscription canceled/quiet/needs_review), then insert the new rows with `ON CONFLICT DO NOTHING` on unique `(subscription_id, charge_date, offset_days, channel)` → idempotency.
 
+- Eligible = status `active`/`trial`, has a `next_charge_date`, not `needs_review`, `quiet` or `dismissed` (`isRemindable`). Pending rows that no longer match the plan are set `canceled`; inserts use `ON CONFLICT … DO UPDATE … WHERE status = 'canceled'` so a hidden-then-restored subscription gets its reminders back, while `sent`/`failed` rows are never touched.
+- If every regular offset is already past (found too late) and nothing was planned for this charge yet, one reminder is sent immediately.
+- Triggered after every `ledger.merge`, every user action on a subscription (edit, confirm, hide, quiet, add), and by the daily `subscriptions.refresh` (06:00 UTC), which recomputes every live subscription so projected dates roll forward.
+
 ### 3.6 Send (`reminders.dispatch`, cron every 15 min)
 Because `send_at` is per-user local time, dispatch polls often instead of once a day.
-- Select reminders where `send_at <= now() AND status = 'pending'`, lock with `FOR UPDATE SKIP LOCKED`.
-- Email via Resend with signed action links: `/api/actions/review?token=…` (HMAC token encodes user, subscription, answer, expiry).
-- Mark `sent` / `failed` with attempt count.
+- One transaction per reminder: claim the oldest due `pending` row with `FOR UPDATE SKIP LOCKED`, re-check the subscription is still remindable with the same charge date (else `canceled`), send, mark `sent`.
+- Resend gets `idempotencyKey = reminder-<id>`, so a crash between sending and marking can't produce a second email.
+- 4xx from Resend (e.g. unverified recipient on the free tier) → `failed`; other errors back off 15/30/60/120 min, `failed` after 5 attempts.
+- Email (`src/lib/reminders/email-template.ts`): inline-styled HTML + text; every dynamic value is HTML-escaped (merchant names come from the LLM). Links use `APP_URL` (default: first `PUBLIC_HOSTS` entry). Keep/Cancel/Not sure action links arrive in M5.
 
 ### 3.7 Calendar (`calendar.upsert`)
-- One all-day event per upcoming charge: title `💳 Spotify renews — $11.99`, description with cancel link + dashboard link.
-- Event `reminders.overrides` = popup at the same offsets (in minutes).
-- Store `google_event_id`; update or delete on change.
+- One all-day event per upcoming charge on the primary calendar: `💳 Spotify renews · $11.99` / `⏳ Hulu trial ends · then $9.99/mo`, marked transparent (free), description with cancel + SubSentry links, `extendedProperties.private.subsentrySubscriptionId`.
+- Popup alerts at 09:00 on the same reminder days (minutes before 00:00 of the event: `d*1440 − 540`, trials shifted one day).
+- Store `google_event_id` + `google_event_date`; update in place; delete when no longer remindable. If the user deleted the event, it stays deleted until the charge date moves.
+- Missing calendar scope → skipped (email reminders still work).
 
 ### 3.8 Priority (`priority.recompute`)
 Runs after merge and after review answers.
@@ -225,7 +231,8 @@ Amounts stored as integer minor units (`amount_minor bigint`) next to an ISO 421
 | `ledger.merge` | after extract | extraction_id |
 | `calendar.upsert` | next_charge_date change | subscription_id |
 | `reminders.plan` | next_charge_date change | unique constraint |
-| `reminders.dispatch` | cron every 15 min | row lock + status |
+| `reminders.dispatch` | cron every 15 min | row lock + status + Resend idempotency key |
+| `subscriptions.refresh` | cron daily 06:00 UTC | recompute is idempotent |
 | `priority.recompute` | after merge / review | subscription_id |
 
 All jobs retry with exponential backoff (max 5). Google 401s trigger token refresh; `invalid_grant` marks the account disconnected and emails the user.
@@ -245,7 +252,7 @@ EXTRACT_MODEL=gemini-flash-latest
 LLM_MIN_INTERVAL_MS=6000  # pause between LLM calls; free tier ≈ 10 requests/min
 RESEND_API_KEY=
 EMAIL_FROM=
-APP_URL=http://localhost:3000
+APP_URL=                  # optional; links in emails/calendar (default: first PUBLIC_HOSTS, else BETTER_AUTH_URL)
 ```
 
 ## 8. Security
@@ -258,7 +265,7 @@ APP_URL=http://localhost:3000
 ## 9. Testing
 - **Unit:** normalize, date math (month-end, leap years, timezones), priority score, reminder planning.
 - **Extraction eval:** 51 synthetic fixture emails in `tests/fixtures/emails/` (all seven kinds plus look-alikes: one-off purchases, trial *offers*, bank alerts) → compare `kind`, `merchant`, `amount`, `currency`, `next_charge_date`/`trial_end_date`. Fails below 85% fully-correct (`EVAL_MIN_ACCURACY`, 90% from M6) or 90% detection precision. Runs against the live API only when `RUN_EVALS=1`; `EVAL_ONLY=<id>` runs a subset.
-- **Integration:** Gmail/Calendar/Resend clients mocked behind interfaces in `src/lib/google` and `src/lib/reminders`.
+- **Integration:** against a separate `<dev db>_test` database (created + migrated by `tests/integration/global-setup.ts`), never the dev data. Gmail/Calendar/Resend/LLM are fakes behind the interfaces in `src/lib/google`, `src/lib/reminders`, `src/lib/llm`.
 
 ## 10. v2 hooks
 - `transactions` table + Plaid recurring endpoint; match on merchant_key ± amount ± date window.

@@ -9,7 +9,7 @@ Read `SPEC.md` (what and why) and `ARCHITECTURE.md` (how) before making changes.
 - `npm run dev` — Next.js app (http://localhost:3000)
 - `npm run worker` — pg-boss worker (`npm run dev:all` runs web + worker together; scans and extraction need the worker)
 - `npm run db:generate` / `npm run db:migrate` — Drizzle migrations
-- `npm test` — unit tests · `npm run test:integration` (needs docker Postgres) · `npm run typecheck` · `npm run lint`
+- `npm test` — unit tests · `npm run test:integration` (docker Postgres; uses its own `*_test` database) · `npm run typecheck` · `npm run lint`
 - `RUN_EVALS=1 npm run eval` — extraction eval against the live LLM (takes ~6 min on the free tier)
 
 ## Conventions

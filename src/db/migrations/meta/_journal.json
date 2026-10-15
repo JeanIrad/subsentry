@@ -36,6 +36,13 @@
       "when": 1792039685370,
       "tag": "0004_massive_prism",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792042309362,
+      "tag": "0005_special_red_ghost",
+      "breakpoints": true
     }
   ]
 }

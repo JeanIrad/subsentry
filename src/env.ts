@@ -22,7 +22,10 @@ const envSchema = z.object({
   // Pause between LLM calls in the worker. Free tiers allow only a few requests/minute.
   LLM_MIN_INTERVAL_MS: z.coerce.number().int().min(0).default(6000),
   RESEND_API_KEY: z.string().optional(),
-  EMAIL_FROM: z.string().optional(),
+  EMAIL_FROM: z.string().default("SubSentry <onboarding@resend.dev>"),
+  // Base URL for links in emails/calendar events. Defaults to the first
+  // PUBLIC_HOSTS entry (reachable from a phone), else BETTER_AUTH_URL.
+  APP_URL: z.url().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -39,3 +42,7 @@ function loadEnv(): Env {
 }
 
 export const env = loadEnv();
+
+export const appUrl = (
+  env.APP_URL ?? (env.PUBLIC_HOSTS[0] ? `https://${env.PUBLIC_HOSTS[0]}` : env.BETTER_AUTH_URL)
+).replace(/\/$/, "");

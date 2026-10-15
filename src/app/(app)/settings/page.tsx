@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { CheckCircle2, Globe, Smartphone, TriangleAlert, UserRound } from "lucide-react";
+import { BellRing, CheckCircle2, Globe, Smartphone, TriangleAlert, UserRound } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { Suspense, type ReactNode } from "react";
@@ -11,6 +11,7 @@ import { requireUser } from "@/lib/auth";
 import { CALENDAR_EVENTS, GMAIL_READONLY } from "@/lib/google/auth";
 import { InstallApp } from "./install-app";
 import { SignOutButton } from "./sign-out-button";
+import { TestReminderButton } from "./test-reminder";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -70,6 +71,15 @@ async function SettingsContent() {
             detail="Adds an event before each upcoming charge."
           />
         </ul>
+      </Section>
+
+      <Section title="Reminders" icon={<BellRing className="size-5 text-brand-600" />}>
+        <p className="mb-4 text-sm text-muted">
+          We email you at 9:00 your time 14, 7 and 1 days before a renewal, and 7, 3 and 1 days before a free trial
+          ends, and add an event with matching alerts to your Google Calendar. Turn reminders off for any subscription
+          from its page.
+        </p>
+        <TestReminderButton />
       </Section>
 
       <Section title="Get the app" icon={<Smartphone className="size-5 text-brand-600" />}>

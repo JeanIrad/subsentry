@@ -1,0 +1,1 @@
+ALTER TABLE "subscriptions" ADD COLUMN "google_event_date" date;

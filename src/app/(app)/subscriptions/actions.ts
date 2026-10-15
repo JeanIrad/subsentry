@@ -7,6 +7,7 @@ import { z } from "zod";
 import { db } from "@/db/client";
 import { subscriptions } from "@/db/schema";
 import { requireUser } from "@/lib/auth";
+import { syncSubscription } from "@/lib/jobs/boss";
 import { categoryFor } from "@/lib/ledger/categories";
 import { overridesSchema, recomputeSubscription, type Overrides } from "@/lib/ledger/merge";
 import { merchantKey } from "@/lib/ledger/normalize";
@@ -93,6 +94,7 @@ export async function updateSubscription(id: string, _prev: FormState, formData:
   }
   await db.update(subscriptions).set({ userOverrides: overrides }).where(eq(subscriptions.id, id));
   await recomputeSubscription(db, id);
+  await syncSubscription(id);
   refresh();
   return {};
 }
@@ -118,6 +120,7 @@ export async function addSubscription(_prev: FormState, formData: FormData): Pro
     return { fieldErrors: { name: `You already have ${parsed.values.merchantName}. Edit that one instead.` } };
   }
   await recomputeSubscription(db, created.id);
+  await syncSubscription(created.id);
   redirect(`/subscriptions/${created.id}`);
 }
 
@@ -128,6 +131,7 @@ export async function confirmStatus(id: string, status: "active" | "canceled"): 
   const overrides = { ...overridesSchema.catch({}).parse(row.userOverrides), status };
   await db.update(subscriptions).set({ userOverrides: overrides }).where(eq(subscriptions.id, id));
   await recomputeSubscription(db, id);
+  await syncSubscription(id);
   refresh();
 }
 
@@ -136,5 +140,15 @@ export async function setDismissed(id: string, dismissed: boolean): Promise<void
   const user = await requireUser();
   await ownedSubscription(user.id, id);
   await db.update(subscriptions).set({ dismissed }).where(eq(subscriptions.id, id));
+  await syncSubscription(id);
+  refresh();
+}
+
+/** Turn reminders (email + calendar) off or on for one subscription (SPEC FR-13). */
+export async function setQuiet(id: string, quiet: boolean): Promise<void> {
+  const user = await requireUser();
+  await ownedSubscription(user.id, id);
+  await db.update(subscriptions).set({ quiet }).where(eq(subscriptions.id, id));
+  await syncSubscription(id);
   refresh();
 }

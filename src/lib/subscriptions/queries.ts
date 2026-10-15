@@ -1,7 +1,7 @@
 import "server-only";
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, gt, sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { subscriptions } from "@/db/schema";
+import { reminders, subscriptions } from "@/db/schema";
 import { daysBetween, monthlyEquivalent, todayIn } from "@/lib/ledger/dates";
 import { overridesSchema } from "@/lib/ledger/merge";
 
@@ -24,6 +24,7 @@ export interface SubscriptionView {
   reviewReason: SubscriptionRow["reviewReason"];
   cancelUrl: string | null;
   dismissed: boolean;
+  quiet: boolean;
   /** Fields the user has edited. */
   edited: string[];
 }
@@ -45,6 +46,7 @@ export function toView(row: SubscriptionRow, today: string): SubscriptionView {
     reviewReason: row.reviewReason,
     cancelUrl: row.cancelUrl,
     dismissed: row.dismissed,
+    quiet: row.quiet,
     edited: Object.keys(overridesSchema.catch({}).parse(row.userOverrides)),
   };
 }
@@ -91,4 +93,14 @@ export function computeTotals(subs: SubscriptionView[]): Totals[] {
     by.set(s.currency, t);
   }
   return [...by.values()].sort((a, b) => b.monthlyMinor - a.monthlyMinor);
+}
+
+/** Upcoming (pending) reminder send times for one subscription. */
+export async function upcomingReminders(subscriptionId: string): Promise<Date[]> {
+  const rows = await db
+    .select({ sendAt: reminders.sendAt })
+    .from(reminders)
+    .where(and(eq(reminders.subscriptionId, subscriptionId), eq(reminders.status, "pending"), gt(reminders.sendAt, sql`now()`)))
+    .orderBy(reminders.sendAt);
+  return rows.map((r) => r.sendAt);
 }
