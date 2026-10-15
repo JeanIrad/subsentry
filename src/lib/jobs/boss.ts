@@ -1,5 +1,5 @@
 import { PgBoss } from "pg-boss";
-import { env } from "@/env";
+import { directDatabaseUrl } from "@/env";
 import { enqueueSubscriptionSync, ensureQueues, QUEUES, type GmailBackfillJob } from "./queues";
 
 // Send-only pg-boss client for the Next.js app. The worker runs its own
@@ -8,7 +8,7 @@ const globalForBoss = globalThis as unknown as { bossPromise?: Promise<PgBoss> }
 
 async function startProducer(): Promise<PgBoss> {
   const boss = new PgBoss({
-    connectionString: env.DATABASE_URL,
+    connectionString: directDatabaseUrl,
     max: 3,
     supervise: false,
     schedule: false,

@@ -16,7 +16,9 @@
     "eval": "vitest run --config vitest.eval.config.mts",
     "test:integration": "vitest run --config vitest.integration.config.mts",
     "icons": "tsx scripts/generate-icons.mts",
-    "dev:all": "concurrently -k -n web,worker -c blue,magenta \"npm:dev\" \"npm:worker\""
+    "dev:all": "concurrently -k -n web,worker -c blue,magenta \"npm:dev\" \"npm:worker\"",
+    "worker:prod": "node --env-file=.env.production --import tsx src/worker/index.ts",
+    "db:migrate:prod": "DOTENV_CONFIG_PATH=.env.production drizzle-kit migrate"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.134.0",

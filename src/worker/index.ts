@@ -2,7 +2,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { PgBoss } from "pg-boss";
 import { db, pool } from "@/db/client";
 import { gmailSyncState, subscriptions } from "@/db/schema";
-import { env } from "@/env";
+import { directDatabaseUrl, env } from "@/env";
 import { getGoogleAccessToken, GoogleReconnectRequiredError } from "@/lib/google/auth";
 import { createGmailReader } from "@/lib/google/gmail";
 import {
@@ -194,7 +194,7 @@ async function registerHandlers(boss: PgBoss): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  const boss = new PgBoss({ connectionString: env.DATABASE_URL });
+  const boss = new PgBoss({ connectionString: directDatabaseUrl });
   boss.on("error", (err: Error) => console.error("[worker] pg-boss error:", err.message));
 
   await boss.start();
