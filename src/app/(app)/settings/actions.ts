@@ -1,10 +1,15 @@
 "use server";
 
 import { and, asc, eq, gte, inArray } from "drizzle-orm";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { db } from "@/db/client";
 import { subscriptions } from "@/db/schema";
 import { appUrl, env } from "@/env";
+import { deleteAccount, revokeGoogleToken } from "@/lib/account/delete";
 import { requireUser } from "@/lib/auth";
+import { getGoogleAccessToken } from "@/lib/google/auth";
+import { createCalendarClient } from "@/lib/google/calendar";
 import { daysBetween, todayIn } from "@/lib/ledger/dates";
 import { createResendSender, EmailPermanentError } from "@/lib/reminders/email";
 import { renderReminderEmail } from "@/lib/reminders/email-template";
@@ -89,4 +94,29 @@ export async function sendTestReminder(): Promise<TestEmailState> {
     }
     return { ok: false, message: "Sending failed. Please try again in a minute." };
   }
+}
+
+/** SPEC U8: disconnect Google and permanently delete everything. */
+export async function deleteMyAccount(formData: FormData): Promise<void> {
+  if (formData.get("confirm") !== "DELETE") return;
+  const user = await requireUser();
+
+  let token: string | null = null;
+  try {
+    token = await getGoogleAccessToken(user.id, []);
+  } catch {
+    // Already disconnected: nothing to clean up on Google's side.
+  }
+  const result = await deleteAccount(user.id, {
+    db,
+    calendar: token ? createCalendarClient(token) : null,
+    revokeGoogle: token ? () => revokeGoogleToken(token) : null,
+  });
+
+  // The session row is gone with the user; clear the now-dangling cookie too.
+  const jar = await cookies();
+  for (const name of ["better-auth.session_token", "__Secure-better-auth.session_token"]) jar.delete(name);
+  // Only warn when there was something on Google's side we couldn't clean up.
+  const googleClean = (!token || result.googleRevoked) && result.calendarEventsLeft === 0;
+  redirect(googleClean ? "/goodbye" : "/goodbye?google=1");
 }

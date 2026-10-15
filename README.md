@@ -2,6 +2,13 @@
 
 Finds subscriptions and free trials in your Gmail and reminds you (email + Google Calendar) before you're charged. See `SPEC.md` and `ARCHITECTURE.md`.
 
+## Status
+
+MVP milestones M0–M6 (SPEC §11) are implemented: Google sign-in, Gmail backfill + 4-hourly sync, LLM extraction
+(eval ≥ 90%), subscription ledger with review prompts, email + Google Calendar reminders, Keep/Cancel/Not sure with a
+priority score, and account deletion. Before onboarding anyone beyond test users: switch to a paid LLM key, verify a
+sending domain in Resend, and complete Google's restricted-scope verification (SPEC §9).
+
 ## Local setup
 
 Requires Node 24+ and Docker.

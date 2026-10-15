@@ -70,7 +70,7 @@ Deployment target (later): Vercel or Fly.io for web, a separate long-running wor
   Sender-only matches must also contain a billing term, so "New on Netflix" marketing doesn't reach the LLM. Broad senders (google.com, amazon.com, apple.com) are deliberately not in `src/lib/google/known-senders.ts`; their receipts match on subject.
 - The mailbox `historyId` is captured before listing (first run only) so incremental sync can't miss mail that arrives mid-backfill.
 - Message IDs are inserted into `processed_messages` (`ON CONFLICT DO NOTHING`), which is the source of truth. Every row still `queued` on the page is (re-)enqueued; this also repairs a crash between insert and enqueue.
-- Incremental: every 4 hours, `users.history.list` from `gmail_sync_state.history_id` (fallback to a `newer_than:2d` query if the history ID expires).
+- Incremental (`gmail.sync`, fanned out to every connected user by the `gmail.sync.all` cron every 4 hours): re-runs the same candidate query over the days since `last_synced_at` + 2 days of margin (capped at 365). Already-seen IDs are skipped by `processed_messages`, so the overlap is free and downtime of any length is covered. This replaced the planned `users.history.list` approach, which needs an expiry fallback anyway and saves nothing at our volume; `history_id` is still recorded. Skipped until the first backfill is `done`, and for disconnected accounts.
 - `email.extract` uses a `stately` queue with `singletonKey = userId:messageId`, so re-enqueueing a message that's already queued is a no-op.
 - LLM quota: a 429 with a short `retryDelay` pauses the pacer and retries; a long one (e.g. the free tier's daily cap) re-enqueues the job with `startAfter` and sets `gmail_sync_state.extract_paused_until` so the dashboard can say when reading resumes.
 - Failures: `GoogleReconnectRequiredError` (no account, scope not granted, no refresh token) sets `last_error` + `disconnected_at` and does not retry; the dashboard shows "Reconnect Google". Other errors set a generic `last_error` and rethrow for pg-boss retry.
@@ -232,7 +232,7 @@ Amounts stored as integer minor units (`amount_minor bigint`) next to an ISO 421
 | Job | Trigger | Idempotency key |
 |---|---|---|
 | `gmail.backfill` | on connect | singleton per user |
-| `gmail.sync` | cron every 4h per user | singleton per user |
+| `gmail.sync` | `gmail.sync.all` cron every 4h → one per user | singleton per user + `processed_messages` |
 | `email.extract` | per message | stately queue, singletonKey `user_id:gmail_message_id` + `processed_messages` status |
 | `ledger.merge` | after extract | extraction_id |
 | `calendar.upsert` | next_charge_date change | subscription_id |
@@ -265,7 +265,7 @@ APP_URL=                  # optional; links in emails/calendar (default: first P
 - Read-only Gmail scope; Calendar `calendar.events` only.
 - Tokens encrypted at rest by Better Auth (rotate by moving to versioned secrets); never logged. Email bodies never persisted or logged.
 - Action links are HMAC-signed, single-purpose, expire in 14 days.
-- Delete account: revoke Google token → delete user rows (cascade) → delete calendar events.
+- Delete account (`src/lib/account/delete.ts`, Settings → type DELETE): remove our calendar events → revoke the Google grant (`oauth2.googleapis.com/revoke`; revoking the access token revokes its refresh token) → hard-delete the `users` row; every other table cascades from it. Google steps are best-effort: data is always deleted, and the goodbye page links to myaccount.google.com/permissions if revocation or event cleanup failed. In-flight jobs for a deleted user find no rows and exit.
 - Google Cloud project stays in OAuth **testing** mode (≤ 100 test users) until Google verification and the restricted-scope security assessment are done.
 
 ## 9. Testing

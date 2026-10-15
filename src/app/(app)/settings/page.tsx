@@ -4,11 +4,12 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { Suspense, type ReactNode } from "react";
 import { GoogleIcon } from "@/components/google-icon";
-import { button, card } from "@/components/ui";
+import { card } from "@/components/ui";
 import { db } from "@/db/client";
 import { accounts, gmailSyncState } from "@/db/schema";
 import { requireUser } from "@/lib/auth";
 import { CALENDAR_EVENTS, GMAIL_READONLY } from "@/lib/google/auth";
+import { DeleteAccount } from "./delete-account";
 import { InstallApp } from "./install-app";
 import { SignOutButton } from "./sign-out-button";
 import { TestReminderButton } from "./test-reminder";
@@ -92,13 +93,8 @@ async function SettingsContent() {
       <Section title="Account" icon={<UserRound className="size-5 text-brand-600" />}>
         <div className="flex flex-col gap-3 sm:flex-row">
           <SignOutButton />
-          <button type="button" disabled className={`${button.danger} w-full sm:w-auto`} title="Coming soon">
-            Delete account &amp; data
-          </button>
+          <DeleteAccount />
         </div>
-        <p className="mt-3 text-xs text-muted">
-          Deleting will revoke Google access and permanently erase everything we&apos;ve stored. Coming soon.
-        </p>
       </Section>
     </div>
   );

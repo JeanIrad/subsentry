@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { extractEmail } from "@/lib/extract/extract";
+import { extractEmail, ExtractionInvalidError } from "@/lib/extract/extract";
 import type { Extraction } from "@/lib/extract/schema";
 import { createLLM } from "@/lib/llm";
 import { LLMRateLimitError } from "@/lib/llm/types";
@@ -87,6 +87,11 @@ describe.runIf(process.env.RUN_EVALS === "1")("extraction eval", () => {
             continue;
           }
           error = err instanceof Error ? err.message : String(err);
+          // Network blips ("fetch failed", resets) say nothing about the model: retry.
+          if (!(err instanceof ExtractionInvalidError)) {
+            await sleep(5000 * (attempt + 1));
+            continue;
+          }
           break;
         }
       }
