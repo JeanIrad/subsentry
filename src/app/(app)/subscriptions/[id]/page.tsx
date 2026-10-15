@@ -8,7 +8,7 @@ import { button, card } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { currencyExponent } from "@/lib/money";
 import { getSubscription, upcomingReminders, type SubscriptionView } from "@/lib/subscriptions/queries";
-import { confirmStatus, setDismissed, setQuiet, updateSubscription } from "../actions";
+import { confirmStatus, setDismissed, setQuiet, setReviewAnswer, updateSubscription } from "../actions";
 import { SubscriptionForm } from "../subscription-form";
 
 export const metadata: Metadata = { title: "Subscription" };
@@ -59,6 +59,8 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
       </section>
 
       {s.needsReview && !s.dismissed && <ReviewPrompt s={s} />}
+
+      {!s.dismissed && !s.needsReview && (s.status === "active" || s.status === "trial") && <Decision s={s} />}
 
       {s.cancelUrl && s.status !== "canceled" && (
         <a href={s.cancelUrl} target="_blank" rel="noopener noreferrer" className={`${button.secondary} justify-between`}>
@@ -190,4 +192,62 @@ function formatDate(d: string | null): string | null {
 
 function formatInstant(t: Date, timezone: string): string {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: timezone }).format(t);
+}
+
+const LEVEL_STYLE = {
+  high: { label: "High", bar: "bg-success", text: "text-success" },
+  medium: { label: "Medium", bar: "bg-brand-500", text: "text-brand-600" },
+  low: { label: "Low", bar: "bg-danger", text: "text-danger" },
+} as const;
+
+function Decision({ s }: { s: SubscriptionView }) {
+  const options = [
+    { value: "keep", label: "Keep" },
+    { value: "cancel", label: "Cancel" },
+    { value: "not_sure", label: "Not sure" },
+  ] as const;
+  const p = s.priority;
+  return (
+    <section className={`${card} p-5`}>
+      <h2 className="font-bold">Your decision</h2>
+      <div className="mt-3 grid grid-cols-3 gap-2" role="group" aria-label="Do you want to keep it?">
+        {options.map((o) => {
+          const selected = (s.reviewAnswer ?? (s.status === "trial" ? "not_sure" : null)) === o.value;
+          return (
+            <form key={o.value} action={setReviewAnswer.bind(null, s.id, o.value)}>
+              <button
+                type="submit"
+                aria-pressed={selected}
+                className={`w-full rounded-xl border-2 px-2 py-2.5 text-sm font-semibold transition ${
+                  selected ? "border-brand-500 bg-brand-50 text-brand-700" : "border-line bg-surface text-ink hover:border-brand-200"
+                }`}
+              >
+                {o.label}
+              </button>
+            </form>
+          );
+        })}
+      </div>
+      {p && (
+        <div className="mt-5 border-t border-line pt-4">
+          <div className="flex items-baseline justify-between">
+            <p className="text-sm font-semibold">Priority</p>
+            <p className={`text-sm font-bold ${LEVEL_STYLE[p.level].text}`}>
+              {LEVEL_STYLE[p.level].label} · {p.score}/100
+            </p>
+          </div>
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-canvas" aria-hidden>
+            <div className={`h-full rounded-full ${LEVEL_STYLE[p.level].bar}`} style={{ width: `${Math.max(4, p.score)}%` }} />
+          </div>
+          {p.reasons.length > 0 && (
+            <ul className="mt-3 flex flex-col gap-1 text-sm text-muted">
+              {p.reasons.map((r) => (
+                <li key={r}>· {r}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </section>
+  );
 }

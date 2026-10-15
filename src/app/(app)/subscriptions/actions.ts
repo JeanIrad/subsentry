@@ -8,6 +8,7 @@ import { db } from "@/db/client";
 import { subscriptions } from "@/db/schema";
 import { requireUser } from "@/lib/auth";
 import { syncSubscription } from "@/lib/jobs/boss";
+import { applyReviewAnswer, recomputePriorities } from "@/lib/priority/recompute";
 import { categoryFor } from "@/lib/ledger/categories";
 import { overridesSchema, recomputeSubscription, type Overrides } from "@/lib/ledger/merge";
 import { merchantKey } from "@/lib/ledger/normalize";
@@ -94,6 +95,7 @@ export async function updateSubscription(id: string, _prev: FormState, formData:
   }
   await db.update(subscriptions).set({ userOverrides: overrides }).where(eq(subscriptions.id, id));
   await recomputeSubscription(db, id);
+  await recomputePriorities(db, user.id);
   await syncSubscription(id);
   refresh();
   return {};
@@ -120,6 +122,7 @@ export async function addSubscription(_prev: FormState, formData: FormData): Pro
     return { fieldErrors: { name: `You already have ${parsed.values.merchantName}. Edit that one instead.` } };
   }
   await recomputeSubscription(db, created.id);
+  await recomputePriorities(db, user.id);
   await syncSubscription(created.id);
   redirect(`/subscriptions/${created.id}`);
 }
@@ -131,6 +134,7 @@ export async function confirmStatus(id: string, status: "active" | "canceled"): 
   const overrides = { ...overridesSchema.catch({}).parse(row.userOverrides), status };
   await db.update(subscriptions).set({ userOverrides: overrides }).where(eq(subscriptions.id, id));
   await recomputeSubscription(db, id);
+  await recomputePriorities(db, user.id);
   await syncSubscription(id);
   refresh();
 }
@@ -140,6 +144,7 @@ export async function setDismissed(id: string, dismissed: boolean): Promise<void
   const user = await requireUser();
   await ownedSubscription(user.id, id);
   await db.update(subscriptions).set({ dismissed }).where(eq(subscriptions.id, id));
+  await recomputePriorities(db, user.id);
   await syncSubscription(id);
   refresh();
 }
@@ -150,5 +155,12 @@ export async function setQuiet(id: string, quiet: boolean): Promise<void> {
   await ownedSubscription(user.id, id);
   await db.update(subscriptions).set({ quiet }).where(eq(subscriptions.id, id));
   await syncSubscription(id);
+  refresh();
+}
+
+/** Keep / Cancel / Not sure from the subscription page. */
+export async function setReviewAnswer(id: string, answer: "keep" | "cancel" | "not_sure"): Promise<void> {
+  const user = await requireUser();
+  await applyReviewAnswer(db, user.id, id, answer);
   refresh();
 }

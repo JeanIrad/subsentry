@@ -4,6 +4,7 @@ import { db } from "@/db/client";
 import { reminders, subscriptions } from "@/db/schema";
 import { daysBetween, monthlyEquivalent, todayIn } from "@/lib/ledger/dates";
 import { overridesSchema } from "@/lib/ledger/merge";
+import { explainPriority, priorityLevel, type PriorityFactors, type PriorityLevel } from "@/lib/priority/score";
 
 export type SubscriptionRow = typeof subscriptions.$inferSelect;
 
@@ -25,6 +26,8 @@ export interface SubscriptionView {
   cancelUrl: string | null;
   dismissed: boolean;
   quiet: boolean;
+  reviewAnswer: SubscriptionRow["reviewAnswer"];
+  priority: { score: number; level: PriorityLevel; reasons: string[] } | null;
   /** Fields the user has edited. */
   edited: string[];
 }
@@ -47,6 +50,15 @@ export function toView(row: SubscriptionRow, today: string): SubscriptionView {
     cancelUrl: row.cancelUrl,
     dismissed: row.dismissed,
     quiet: row.quiet,
+    reviewAnswer: row.reviewAnswer,
+    priority:
+      row.priorityScore != null && row.priorityFactors
+        ? {
+            score: row.priorityScore,
+            level: priorityLevel(row.priorityScore),
+            reasons: explainPriority(row.priorityFactors as unknown as PriorityFactors, row.category, row.reviewAnswer),
+          }
+        : null,
     edited: Object.keys(overridesSchema.catch({}).parse(row.userOverrides)),
   };
 }

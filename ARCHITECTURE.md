@@ -136,8 +136,8 @@ Because `send_at` is per-user local time, dispatch polls often instead of once a
 - Store `google_event_id` + `google_event_date`; update in place; delete when no longer remindable. If the user deleted the event, it stays deleted until the charge date moves.
 - Missing calendar scope → skipped (email reminders still work).
 
-### 3.8 Priority (`priority.recompute`)
-Runs after merge and after review answers.
+### 3.8 Priority (`src/lib/priority/`)
+Computed inline (it's cheap) for all of a user's subscriptions, since scores are relative: after every merge, every edit/answer in the app or from an email link, and in the daily refresh. Only live (active/trial, not hidden) subscriptions get a score; unconfirmed trials count as "Not sure". Cost percentile is among the user's subscriptions in the same currency. The usage component (activity emails) is optional in the SPEC and not collected yet.
 ```
 score = 50
   + review:  keep +35 | cancel −40 | not_sure 0
@@ -146,7 +146,13 @@ score = 50
   + usage:   +10 if activity email seen in last 30 days, −10 if none in 60+ days (only when sender usually sends activity emails)
   clamp 0..100
 ```
-Each component is stored in `priority_factors` (JSONB) so the UI can explain the score.
+Each component is stored in `priority_factors` (JSONB) so the UI can explain the score (`explainPriority`: "You said you plan to cancel", "One of 3 video subscriptions", "Among your most expensive"). Levels: high ≥ 65, medium ≥ 40, low < 40; Home lists the lowest as "Worth a second look".
+
+### 3.9 Review answers (Keep / Cancel / Not sure)
+- Reminder emails carry three links to `/review/<token>?a=keep|cancel|not_sure`. The token (`src/lib/crypto.ts`) is HMAC-SHA256 (`ACTION_TOKEN_SECRET`) over `{user, subscription, expiry}`, valid 14 days, checked with `timingSafeEqual`; it authorizes answering for that one subscription only, without a login.
+- GET never changes anything — mail security scanners open every link — the page pre-selects the answer and the user taps **Confirm** (a POST server action).
+- "Cancel" doesn't mark the subscription canceled (the user hasn't canceled yet); reminders continue until a cancellation email or the user says so, and the page offers the service's cancel link.
+- The same choice is on each subscription's page.
 
 ## 4. Data model (Drizzle)
 
@@ -233,7 +239,7 @@ Amounts stored as integer minor units (`amount_minor bigint`) next to an ISO 421
 | `reminders.plan` | next_charge_date change | unique constraint |
 | `reminders.dispatch` | cron every 15 min | row lock + status + Resend idempotency key |
 | `subscriptions.refresh` | cron daily 06:00 UTC | recompute is idempotent |
-| `priority.recompute` | after merge / review | subscription_id |
+| `priority.recompute` | (queue reserved; computed inline today) | per user |
 
 All jobs retry with exponential backoff (max 5). Google 401s trigger token refresh; `invalid_grant` marks the account disconnected and emails the user.
 

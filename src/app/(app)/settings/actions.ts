@@ -8,6 +8,8 @@ import { requireUser } from "@/lib/auth";
 import { daysBetween, todayIn } from "@/lib/ledger/dates";
 import { createResendSender, EmailPermanentError } from "@/lib/reminders/email";
 import { renderReminderEmail } from "@/lib/reminders/email-template";
+import { createReviewToken } from "@/lib/crypto";
+import { priorityLevel } from "@/lib/priority/score";
 
 export interface TestEmailState {
   ok?: boolean;
@@ -49,6 +51,8 @@ export async function sendTestReminder(): Promise<TestEmailState> {
           priceChanged: false,
           cancelUrl: sub.cancelUrl,
           detailUrl: `${appUrl}/subscriptions/${sub.id}`,
+          reviewUrl: `${appUrl}/review/${createReviewToken({ userId: user.id, subscriptionId: sub.id }, env.ACTION_TOKEN_SECRET)}`,
+          priority: sub.priorityScore != null ? { level: priorityLevel(sub.priorityScore), reason: null } : null,
         }
       : {
           merchantName: "Example Streaming",
@@ -62,6 +66,8 @@ export async function sendTestReminder(): Promise<TestEmailState> {
           priceChanged: false,
           cancelUrl: null,
           detailUrl: `${appUrl}/subscriptions`,
+          reviewUrl: null,
+          priority: null,
         },
   );
 

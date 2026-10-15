@@ -1,7 +1,9 @@
 import { and, eq, inArray, ne, notInArray, or, sql } from "drizzle-orm";
 import type { Db } from "@/db/client";
 import { reminders, subscriptions, users } from "@/db/schema";
-import { appUrl } from "@/env";
+import { appUrl, env } from "@/env";
+import { createReviewToken } from "@/lib/crypto";
+import { explainPriority, priorityLevel, type PriorityFactors } from "@/lib/priority/score";
 import { daysBetween, todayIn } from "@/lib/ledger/dates";
 import { EmailPermanentError, type EmailSender } from "@/lib/reminders/email";
 import { renderReminderEmail } from "@/lib/reminders/email-template";
@@ -125,6 +127,15 @@ export async function runRemindersDispatch(
         priceChanged: sub.priceChangedAt != null && now().getTime() - sub.priceChangedAt.getTime() < 60 * 86_400_000,
         cancelUrl: sub.cancelUrl,
         detailUrl: `${appUrl}/subscriptions/${sub.id}`,
+        reviewUrl: `${appUrl}/review/${createReviewToken({ userId: sub.userId, subscriptionId: sub.id }, env.ACTION_TOKEN_SECRET, now())}`,
+        priority:
+          sub.priorityScore != null
+            ? {
+                level: priorityLevel(sub.priorityScore),
+                reason:
+                  explainPriority(sub.priorityFactors as unknown as PriorityFactors, sub.category, sub.reviewAnswer)[0] ?? null,
+              }
+            : null,
       });
 
       try {

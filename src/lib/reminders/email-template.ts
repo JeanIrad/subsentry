@@ -16,7 +16,12 @@ export interface ReminderEmailInput {
   priceChanged: boolean;
   cancelUrl: string | null;
   detailUrl: string;
+  /** Signed review page; buttons append ?a=keep|cancel|not_sure. */
+  reviewUrl: string | null;
+  priority: { level: "high" | "medium" | "low"; reason: string | null } | null;
 }
+
+const PRIORITY_LABEL = { high: "High", medium: "Medium", low: "Low" } as const;
 
 const CYCLE: Record<string, string> = { weekly: "week", monthly: "month", quarterly: "quarter", yearly: "year" };
 
@@ -44,6 +49,9 @@ export function renderReminderEmail(i: ReminderEmailInput): { subject: string; h
     ["Service", i.merchantName + (i.planName ? ` · ${i.planName}` : "")],
     [trial ? "Price after trial" : "Amount", price ? `${price}${per}${i.priceChanged ? " (new price)" : ""}` : "Unknown"],
     [trial ? "Trial ends" : "Charge date", date],
+    ...(i.priority
+      ? [["Priority", `${PRIORITY_LABEL[i.priority.level]}${i.priority.reason ? ` · ${i.priority.reason}` : ""}`] as [string, string]]
+      : []),
   ];
 
   const e = escapeHtml;
@@ -73,8 +81,29 @@ export function renderReminderEmail(i: ReminderEmailInput): { subject: string; h
         .join("")}
     </table>
   </td></tr>
-  <tr><td style="padding:20px 0 4px;">
-    ${i.cancelUrl ? `${button(i.cancelUrl, `Manage or cancel on ${i.merchantName}`, true)}&nbsp;&nbsp;` : ""}${button(i.detailUrl, "Open in SubSentry", !i.cancelUrl)}
+  ${
+    i.reviewUrl
+      ? `<tr><td style="padding:20px 4px 8px;font-size:15px;font-weight:700;">Do you want to keep it?</td></tr>
+  <tr><td>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+      ${(
+        [
+          ["keep", "Keep", "#2453e0", "#ffffff"],
+          ["cancel", "Cancel it", "#fff1f2", "#be123c"],
+          ["not_sure", "Not sure", "#ffffff", "#1c41bd"],
+        ] as const
+      )
+        .map(
+          ([a, label, bg, fg], idx) =>
+            `<td width="33%" style="padding:${idx ? "0 0 0 8px" : "0"};"><a href="${e(`${i.reviewUrl}?a=${a}`)}" style="display:block;text-align:center;padding:12px 4px;border-radius:12px;font-weight:700;font-size:15px;text-decoration:none;background:${bg};color:${fg};border:1px solid ${a === "keep" ? bg : "#e2e9f6"};">${label}</a></td>`,
+        )
+        .join("")}
+    </tr></table>
+  </td></tr>`
+      : ""
+  }
+  <tr><td style="padding:16px 0 4px;">
+    ${i.cancelUrl ? `${button(i.cancelUrl, `Manage or cancel on ${i.merchantName}`, !i.reviewUrl)}&nbsp;&nbsp;` : ""}${button(i.detailUrl, "Open in SubSentry", !i.cancelUrl && !i.reviewUrl)}
   </td></tr>
   <tr><td style="padding:24px 4px 0;font-size:12px;color:#5a6888;line-height:1.6;">
     You're getting this because SubSentry found this ${trial ? "trial" : "subscription"} in your email.
@@ -89,6 +118,7 @@ export function renderReminderEmail(i: ReminderEmailInput): { subject: string; h
     "",
     ...rows.map(([k, v]) => `${k}: ${v}`),
     "",
+    i.reviewUrl ? `Keep it: ${i.reviewUrl}?a=keep\nCancel it: ${i.reviewUrl}?a=cancel\nNot sure: ${i.reviewUrl}?a=not_sure` : null,
     i.cancelUrl ? `Manage or cancel: ${i.cancelUrl}` : null,
     `Open in SubSentry: ${i.detailUrl}`,
   ]

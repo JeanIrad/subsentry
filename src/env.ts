@@ -14,8 +14,8 @@ const envSchema = z.object({
     .transform((s) => s.split(",").map((h) => h.trim()).filter(Boolean)),
   GOOGLE_CLIENT_ID: z.string().min(1),
   GOOGLE_CLIENT_SECRET: z.string().min(1),
-  // Not needed until later milestones; optional so M0 boots without them.
-  ACTION_TOKEN_SECRET: z.string().min(32).optional(),
+  // Signs Keep / Cancel / Not sure links in reminder emails: openssl rand -base64 32
+  ACTION_TOKEN_SECRET: z.string().min(32, "use `openssl rand -base64 32`"),
   LLM_PROVIDER: z.enum(["gemini"]).default("gemini"),
   GEMINI_API_KEY: z.string().optional(),
   EXTRACT_MODEL: z.string().default("gemini-flash-lite-latest"),

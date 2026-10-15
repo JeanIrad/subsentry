@@ -82,6 +82,11 @@ async function Dashboard() {
     .filter((x) => !x.needsReview && (x.status === "active" || x.status === "trial") && x.daysUntil != null && x.daysUntil >= 0)
     .slice(0, 5);
   const trials = subs.filter((x) => x.status === "trial" && !x.needsReview).length;
+  // Lowest priority first: what's most worth reconsidering.
+  const worthALook = subs
+    .filter((x) => x.priority && x.priority.level === "low" && (x.status === "active" || x.status === "trial"))
+    .sort((a, b) => a.priority!.score - b.priority!.score)
+    .slice(0, 3);
 
   const scanCard = (
     <ScanCard
@@ -171,6 +176,22 @@ async function Dashboard() {
               </span>
               <ChevronRight className="size-5 text-muted" />
             </Link>
+          )}
+
+          {worthALook.length > 0 && (
+            <section className={`${card} p-2`}>
+              <div className="px-3 pt-3 pb-1">
+                <h2 className="font-bold">Worth a second look</h2>
+                <p className="text-sm text-muted">Low priority based on your answers, cost and overlap.</p>
+              </div>
+              <ul className="divide-y divide-line">
+                {worthALook.map((x) => (
+                  <li key={x.id}>
+                    <SubscriptionRowLink s={x} />
+                  </li>
+                ))}
+              </ul>
+            </section>
           )}
 
           <section className={`${card} p-2`}>

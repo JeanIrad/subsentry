@@ -17,6 +17,7 @@ import {
 import { CALENDAR_EVENTS } from "@/lib/google/auth";
 import { createCalendarClient } from "@/lib/google/calendar";
 import { recomputeSubscription } from "@/lib/ledger/merge";
+import { recomputePriorities } from "@/lib/priority/recompute";
 import { createResendSender } from "@/lib/reminders/email";
 import { runCalendarUpsert } from "./jobs/calendar-upsert";
 import { runRemindersDispatch, runRemindersPlan, subscriptionsToRefresh } from "./jobs/reminders";
@@ -64,7 +65,10 @@ async function registerHandlers(boss: PgBoss): Promise<void> {
   await boss.work<LedgerMergeJob>(QUEUES.ledgerMerge.name, async ([job]) => {
     const result = await mergeExtraction(db, job.data.extractionId);
     console.log(`[ledger.merge] extraction=${job.data.extractionId} →`, result ?? "skipped");
-    if (result) await enqueueSubscriptionSync(boss, result.subscriptionId);
+    if (result) {
+      await recomputePriorities(db, job.data.userId);
+      await enqueueSubscriptionSync(boss, result.subscriptionId);
+    }
   });
 
   await boss.work<SubscriptionJob>(QUEUES.remindersPlan.name, async ([job]) => {
@@ -95,6 +99,9 @@ async function registerHandlers(boss: PgBoss): Promise<void> {
       await recomputeSubscription(db, id);
       await enqueueSubscriptionSync(boss, id);
     }
+    // Scores are relative within a user, so recompute per user after the dates moved.
+    const owners = await db.selectDistinct({ userId: subscriptions.userId }).from(subscriptions);
+    for (const { userId } of owners) await recomputePriorities(db, userId);
     console.log(`[subscriptions.refresh] ${ids.length} subscriptions`);
   });
   await boss.schedule(QUEUES.subscriptionsRefresh.name, "0 6 * * *"); // daily, 06:00 UTC
