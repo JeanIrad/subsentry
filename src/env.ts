@@ -29,6 +29,11 @@ const envSchema = z.object({
   // Base URL for links in emails/calendar events. Defaults to the first
   // PUBLIC_HOSTS entry (reachable from a phone), else BETTER_AUTH_URL.
   APP_URL: z.url().optional(),
+  // Who runs background jobs: "worker" (npm run worker, always on) or "tick"
+  // (serverless: /api/jobs/tick, called by a scheduler and after user actions).
+  JOB_RUNNER: z.enum(["worker", "tick"]).default("worker"),
+  // Bearer token for /api/jobs/tick. Vercel Cron sends it automatically: openssl rand -base64 32
+  CRON_SECRET: z.string().min(32, "use `openssl rand -base64 32`").optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

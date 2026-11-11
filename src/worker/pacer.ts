@@ -10,6 +10,8 @@ export interface Pacer {
   wait(): Promise<void>;
   /** The API said "slow down": hold every caller for at least this long. */
   pushBack(seconds: number): void;
+  /** How long until the next call could go out without waiting. */
+  readyInMs(): number;
 }
 
 export function createPacer(minIntervalMs: number, maxSleepMs = 120_000): Pacer {
@@ -24,6 +26,9 @@ export function createPacer(minIntervalMs: number, maxSleepMs = 120_000): Pacer 
     },
     pushBack(seconds) {
       nextSlot = Math.max(nextSlot, Date.now() + seconds * 1000);
+    },
+    readyInMs() {
+      return Math.max(0, nextSlot - Date.now());
     },
   };
 }

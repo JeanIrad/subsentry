@@ -24,7 +24,7 @@ See `SPEC.md` for product scope. This document covers how the MVP is built.
 | UI | Tailwind 4 tokens in `globals.css` (blue & white), Plus Jakarta Sans, lucide-react icons; shared classes in `src/components/ui.ts` | Mobile-first: bottom tab bar on phones, top nav ≥ 640px |
 | Local dev | Docker Compose (Postgres), `tsx` for the worker | |
 
-Deployment target (later): Vercel or Fly.io for web, a separate long-running worker process for pg-boss, managed Postgres (Neon/Supabase/RDS).
+Deployment (current): everything on free tiers. Web + jobs on Vercel Hobby, Postgres on Neon (via the Vercel integration), and a free external scheduler (cron-job.org) calling `/api/jobs/tick` every 5 minutes; see §6 and README → Deploy. Vercel Hobby is for non-commercial use only. Before onboarding other users, move the jobs to an always-on worker (Fly.io: `npm run worker` in a container, `JOB_RUNNER=worker`) and switch to paid plans and keys.
 
 ## 2. System overview
 
@@ -218,7 +218,9 @@ Amounts stored as integer minor units (`amount_minor bigint`) next to an ISO 421
 │  │  ├─ reminders/ plan.ts  dispatch.ts  email-template.tsx
 │  │  └─ priority/ score.ts
 │  └─ worker/
-│     ├─ index.ts            # pg-boss bootstrap, handler registration, schedules
+│     ├─ handlers.ts         # job handlers + recurring jobs, shared by both runners
+│     ├─ index.ts            # long-running runner: pg-boss workers + cron schedules
+│     ├─ tick.ts             # serverless runner behind /api/jobs/tick
 │     └─ jobs/               # one file per job name
 └─ tests/
    ├─ fixtures/emails/*.json # anonymized sample emails + expected output
@@ -241,6 +243,10 @@ Amounts stored as integer minor units (`amount_minor bigint`) next to an ISO 421
 | `subscriptions.refresh` | cron daily 06:00 UTC | recompute is idempotent |
 | `priority.recompute` | (queue reserved; computed inline today) | per user |
 
+**Runners.** The handlers live in `src/worker/handlers.ts` and run in one of two ways (`JOB_RUNNER`):
+- `worker` (default; local dev, or an always-on host): `src/worker/index.ts` is a long-running pg-boss worker with cron schedules.
+- `tick` (Vercel): `src/worker/tick.ts`, reached at `/api/jobs/tick` (Bearer `CRON_SECRET`). Each call takes a Postgres advisory lock (one tick at a time), runs pg-boss maintenance, enqueues recurring jobs once per time slot (`singletonSeconds`), then fetches and runs jobs (cheap queues first, extraction last) for ≤ 270 s. Called every 5 min by an external scheduler, daily by Vercel Cron as a fallback, and right after a scan or edit via `after()` (`src/lib/jobs/kick.ts`). A tick cut off mid-job leaves it `active` until pg-boss expires it (15 min) and retries it; safe because every job is idempotent. LLM rate limits reschedule the job instead of sleeping.
+
 All jobs retry with exponential backoff (max 5). Google 401s trigger token refresh; `invalid_grant` marks the account disconnected and emails the user.
 
 ## 7. Configuration (`.env`)
@@ -259,6 +265,9 @@ LLM_MIN_INTERVAL_MS=6000  # pause between LLM calls; free tier ≈ 10 requests/m
 RESEND_API_KEY=
 EMAIL_FROM=
 APP_URL=                  # optional; links in emails/calendar (default: first PUBLIC_HOSTS, else BETTER_AUTH_URL)
+JOB_RUNNER=worker         # or "tick" on Vercel
+CRON_SECRET=              # Bearer token for /api/jobs/tick; openssl rand -base64 32
+DATABASE_URL_UNPOOLED=    # Neon direct connection for pg-boss + migrations (set by the Vercel integration)
 ```
 
 ## 8. Security

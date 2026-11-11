@@ -3,6 +3,9 @@ import type { ReactNode } from "react";
 import { Logo } from "@/components/logo";
 import { BottomTabs, TopNav } from "./nav";
 
+// Server actions here may run a job tick after responding (src/lib/jobs/kick.ts).
+export const maxDuration = 300;
+
 // Signed-in app shell: top bar everywhere, tab bar at the bottom on phones.
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (

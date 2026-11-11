@@ -1,9 +1,10 @@
 import { PgBoss } from "pg-boss";
 import { directDatabaseUrl } from "@/env";
+import { kickJobs } from "./kick";
 import { enqueueSubscriptionSync, ensureQueues, QUEUES, type GmailBackfillJob } from "./queues";
 
-// Send-only pg-boss client for the Next.js app. The worker runs its own
-// full instance (maintenance, schedules, handlers).
+// Send/fetch pg-boss client for the Next.js app (and the serverless tick, which
+// runs maintenance itself). The long-running worker has its own full instance.
 const globalForBoss = globalThis as unknown as { bossPromise?: Promise<PgBoss> };
 
 async function startProducer(): Promise<PgBoss> {
@@ -32,8 +33,10 @@ export async function enqueueBackfill(userId: string): Promise<void> {
   const boss = await getBoss();
   const data: GmailBackfillJob = { userId };
   await boss.send(QUEUES.gmailBackfill.name, data, { singletonKey: userId });
+  kickJobs();
 }
 
 export async function syncSubscription(subscriptionId: string): Promise<void> {
   await enqueueSubscriptionSync(await getBoss(), subscriptionId);
+  kickJobs();
 }
